@@ -1,0 +1,190 @@
+---
+title: "Cleaning & Extra `dplyr` Homework"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    number_sections: true
+    df_print: paged
+    css: ../../../styles.css
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+<br>
+In this homework you are going to use a dataset about movies from [Kaggle](https://www.kaggle.com/tmdb/tmdb-movie-metadata).
+
+Copy over the data to your homework directory and read it in. Remember to load any packages you will be using.
+
+# MVP
+<br>
+**Question 1.** 
+
+After you've read in the data and assigned it to a variable with a useful name, investigate it. Write down some ideas for what you could do to further investigate/clean this data using what you've learned today (no need to code it though, just jot down thoughts and ideas). Feel free to also write down any general thoughts you get looking at the data - this task is just to get you thinking about data and data cleaning/prepping.
+
+Answer
+
+Does budget relate to runtime / popularity / revenue. Does having a webpage relate to either? (What are people voting for in the vote average/count columns?). Do more people watch long or short movies? Were there years where movie popularity was higher... would genre have been a factor there (though genre isn't a variable).
+
+```{r}
+library(tidyverse)
+movie_data <- read_csv("data/movies.csv")
+movie_data
+
+glimpse(movie_data)
+
+```
+
+
+<br> 
+
+**Question 2.**
+
+A lot of interesting stuff in there! But for now, we are only interested in the movies' titles, their runtime as well as their budget. Select the three columns that contain this information and save them into a new variable called `movies_selected`. Hint: you will have to make a choice between `original_title` and `title`.
+
+
+```{r}
+
+movies_selected <- select(movie_data, title, runtime, budget)
+movies_selected
+```
+
+
+
+<br>
+
+
+**Question 3.**  
+
+Ok, now take your subsetted data `movies_selected`, and count the number of missing values in each column.
+
+
+(Here we need to use across - but we will learn this on Friday!)
+
+```{r}
+movies_selected %>%
+  summarise(count = sum(is.na(title)))
+
+movies_selected %>%
+  summarise(count = sum(is.na(runtime)))
+
+movies_selected %>%
+  summarise(count = sum(is.na(budget)))
+            
+#0 in title, 2 in runtime, 0 in budget
+           
+```
+
+
+
+<br>
+
+**Question 4.**  
+
+There's not too many NAs, but there are actually quite a few movies with a runtime of 0 in this dataset. Since it's impossible for a movie to have a runtime of 0, use the function `na_if` to convert runtimes of length 0 into NAs. Save this into a new variable called `movies_runtime`. Then count how many missing values there are now in the column `runtime`.
+
+
+```{r}
+
+movies_runtime <- movies_selected %>%
+  arrange(runtime) %>% 
+  mutate(runtime = na_if(runtime, 0)) %>% 
+  summarise(count = sum(is.na(runtime)))
+movies_runtime
+  
+ 
+
+
+#there are 35 with 0 runtime and 2 with NA...
+```
+
+<br>
+
+**Question 5.**  
+
+Impute the missing values in `runtime` with the median runtime using `coalesce` and save this into a new variable called `movies_imputed`. There should now be no missing values in the column `runtime` - check this to make sure.
+
+  
+
+
+```{r}
+# this changes all NA to 104 (median) but isn't coalesce
+# movies_imputed <- movies_selected %>% 
+#  mutate(runtime = ifelse(is.na(runtime),
+#                          median(runtime, na.rm = TRUE),
+#                          runtime))
+# movies_imputed
+           
+
+movies_imputed <- movies_selected %>% 
+  mutate(runtime = coalesce(runtime, median(runtime, na.rm = TRUE)))
+movies_imputed
+
+movies_selected %>% 
+  summarise(count = sum(is.na(runtime)))
+
+# uh oh ... i still have 2??
+```
+
+<br>
+
+**Question 6.**  
+
+Finally, use the `slice_min` and `slice_max` functions on `movies_imputed` to get the movies with the 10 shortest and 10 longest runtimes.
+
+```{r}
+#why is 0 not NA?
+
+movies_imputed %>%
+  slice_min(runtime, n = 10)
+
+movies_imputed %>% 
+  slice_max(runtime, n = 10)
+
+```
+
+
+<br>
+**Question 7.**  
+
+Using the `if_else` function, impute anything with a budget below $100 with the median budget. Overwrite your `movies_imputed` so it contains the new budget values.
+
+
+```{r}
+
+
+```
+
+
+
+
+# Extension
+
+
+<br> 
+
+**Question 1.**  
+
+Using `case_when`, create a new column called `budget_type` and label budgets as follows:
+
+* Budgets below 12 million as 'Small budget'
+* Budgets between 12 and 40 million as 'Medium budget'
+* Budgets 40 millions and above as 'Big budget'
+
+Save this into a new variable called `movie_budgets`.
+
+<details>
+<summary>**Hint:**</summary> 1e6 is a shorthand way of writing 1 million ($1 \times 10^6$)
+</details>
+
+<br> 
+
+**Question 2.**  
+
+Take the original dataset with all the variables. Using `across` and `where`, summarise the number of missing values, first across all columns of type `character`, and then across all columns of type `numeric`.
+
+<br> 
+
