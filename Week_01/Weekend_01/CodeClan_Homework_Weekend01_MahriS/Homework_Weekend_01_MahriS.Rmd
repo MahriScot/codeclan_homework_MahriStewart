@@ -1,0 +1,222 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+```
+
+```{r}
+books <- read_csv("data/books.csv")
+```
+```{r}
+view(books)
+```
+
+```{r}
+dim(books) 
+# there are 11,123 rows and 13 columns
+
+names(books)
+
+count(books, language_code) 
+# there are 27 language codes (including en-CA, en-GB, en-US, and eng)
+
+books %>%
+  summarise(count = sum(is.na(books))) #there are no NAs... doesn't mean there aren't any 0's or -'s
+
+
+glimpse(books) 
+# remember there are character and numeric data types 
+
+max(books, average_rating) #WHY DO I GET THIS ERROR: object 'average_rating' not found
+```
+
+
+
+
+Which are the top 5 languages rated here and how many are in variations of english language Vs other languages
+
+```{r}
+
+language_grouping_count <- books %>% 
+  select(language_code) %>% 
+  count(language_code) %>% 
+  arrange(desc(n))
+language_grouping_count
+
+# there are 27 language codes:
+# 1 - English - almost 8908
+# 2 - English-US - 1408
+# 3 - Spanish - 218
+# 4 - English-GB - 214  (Just my interest - what is the diff between eng and this?)
+# 5 - French - 144
+
+
+
+filter(books, language_code %in% c("eng", "en-US", "en-GB", "en-CA"))
+
+# 10,537 are in a variation of English (586 are therefore not)
+
+
+
+non_english_language <- books %>% 
+  filter(language_code != "eng" & 
+           language_code != "en-US" & 
+           language_code != "en-GB" & 
+           language_code != "en-CA")
+non_english_language
+
+#yep, there are 586 of them... couldn't work out if there is a cleaner way of getting this info
+
+```
+
+
+Calculating the average rating across all books and creating a new column that states TRUE if the book has a rating > the average and FALSE if not (my column appeared... then disappeared!? HELP)
+
+```{r}
+
+mean_average_rating <- books %>% 
+  mutate(mean_average_rating = mean(average_rating, na.rm = TRUE))
+mean_average_rating
+  
+# average rating across all books is 3.93(4075) out of 5
+#next step (deleted) didn't work but realised I need for the mean average rating to be a numeric rather than a tibble so have to do:
+
+mean_average_rating <- books %>% 
+  summarise(average_rating = mean(average_rating, na.rm = TRUE)) %>% 
+  pull()
+class(mean_average_rating)
+
+# now mean_average_rating is a numeric 
+
+books %>% 
+  mutate(rating_above_average = average_rating > mean_average_rating)
+books
+
+
+#I can see below that it's worked and added the column... but then taken it away again so I can't see it (nothing in the Environment panel either)... (error -  no applicable method for 'mutate' applied to an object of class "c('double', 'numeric')" when added below pull())
+
+
+# average rating across all books is 3.93(4075) out of 5
+# (My interest - some books have a rating of 0, does this mean NA or does it mean they were actually rubbish?! I don't think NA because the author says it's well done)
+
+
+```
+
+
+There are lots with 0 pages / with very small numbers of pages... some are definitely children's books, so let's go with anything less than 10 should be removed.
+
+```{r}
+
+remove_short_books <- books %>% 
+  select(title, average_rating, num_pages) %>% 
+  mutate(more_than_10pages = num_pages >= 10) %>% 
+  mutate(more_than_10pages = na_if(more_than_10pages, FALSE)) %>% 
+  filter(!is.na(more_than_10pages))
+remove_short_books
+
+# There MUST be a better way...
+# added a new column called "more than 10pages" with TRUE or FALSE as to whether there's >= 10 pages. Changed Falses to NAs. Removed those with less than 10. 
+ # 10,928 rows remaining / 11,123
+
+
+```
+
+Using case_when to add a new column showing description of length
+
+
+```{r}
+
+#from the internet... doesn't work 
+# pages_range <- books %>% 
+#  select(num_pages) %>% 
+#  group_by(grp = cut(value, c(-Inf, 2000, 4000, Inf))) %>%
+#  summarise(count = sum(count))
+# pages_range
+
+short_or_long <- books %>% 
+  select(num_pages) %>% 
+  mutate(short_or_long = case_when(
+    num_pages <= 50 ~ "Very Short",
+    num_pages <= 300 ~ "Short",
+    num_pages <= 1000 ~ "Medium",
+    num_pages <= 2000 ~ "Long",
+    TRUE ~ "Very Long"
+  ))
+short_or_long
+  
+
+
+```
+
+
+Working out a link between length of book and ratings_count / text_reviews_count (though looking at both ends of the table, it doesn't really seem like there's a terribly distinct pattern)... not finished
+
+```{r}
+
+length_vs_count <- books %>% 
+  select(title, num_pages, ratings_count, text_reviews_count)
+length_vs_count
+
+```
+
+
+
+
+More stuff that didn't work - What is the mean rating average for english, all english, and foreign language books
+
+```{r}
+
+# Looking at the average rating for English books - (remember there are 8908/11123 of them)
+
+eng_language_ave_rating <- books %>% 
+  filter(language_code == "eng") %>% 
+  mutate(eng_average_rating = mean(average_rating, na.rm = TRUE)) %>% 
+eng_language_ave_rating
+
+# average for eng (English) books is 3.93(4062) (unsurprisingly same as average for all)
+
+# what is the average for all versions of English...
+
+all_english_language <- books %>% 
+  filter(language_code %in% c("eng", "en-US", "en-GB", "en-CA")) %>% 
+  mutate(all_english_language, all_eng_average_rating = mean(average_rating, na.rm = TRUE)) %>% 
+all_english_language
+
+# I can filter for language code but then it doesn't let me mutate for average_rating 
+# ERROR MESSAGE Error in all_english_language(.) : could not find function "all_english_language"
+# I've tried assigning all english language too...
+
+
+# I can do this: 
+# all_english_language <- books %>% 
+# filter(language_code %in% c("eng", "en-US", "en-GB", "en-CA")) %>% 
+# all_english_language
+
+# and get that 10537 language codes include English (586 therefore in another language)
+
+
+
+# so i'll look at non-english language...
+         
+non_english_language <- books %>% 
+  filter(language_code != "eng" & language_code != "en-US" & language_code != "en-GB" & language_code != "en-CA")
+non_english_language
+
+#yep, there are 586 of them as found before...
+
+non_english_ave_rating <- non_english_language %>% 
+  mutate(non_engl_average_rating = mean(average_rating, na.rm = TRUE)) %>% 
+non_english_ave_rating
+
+# Error in non_english_ave_rating(.) : could not find function "non_english_ave_rating" 
+```
+
+
+
+
+
+
+
