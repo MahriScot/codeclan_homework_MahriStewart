@@ -1,0 +1,252 @@
+---
+title: "Programming in R Homework - Mahri"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    number_sections: true
+    df_print: paged
+    css: ../../../styles.css
+  pdf_document: default
+---
+
+# MVP
+```{r}
+library(tidyverse)
+```
+
+<br> 
+
+**Question 1.** \
+Find the weather forecast for the next three days online. Create a list of lists in which each inner list should be labelled with the name of the day of the week. Each inner list should contain named elements telling you the temperature, chance of rain and wind speed.
+
+```{r}
+
+
+weather_forecast <- list(
+  "Thursday" = list(temperature_degrees = 12, percentage_chance_of_rain = 20, wind_speed_mph = 21), 
+  "Friday" = list(temperature_degrees = 13, percentage_chance_of_rain = 10, wind_speed_mph = 10), 
+  "Saturday" = list(temperature_degrees = 14, percentage_chance_of_rain = 10, wind_speed_mph = 7)
+)
+
+weather_forecast
+```
+
+
+<br>
+
+**Question 2.** \
+Using the list you've just made find:
+
+  i. The chance of rain tomorrow
+  ii. The wind speed on the day after tomorrow
+  iii. The temperature tomorrow.
+
+
+```{r}
+
+# 1. The chance of rain tomorrow
+
+weather_forecast$Thursday$percentage_chance_of_rain
+
+#OR 
+
+weather_forecast[[1]][[2]]
+
+
+
+
+#2. The wind speed on the day after tomorrow
+
+weather_forecast$Friday$wind_speed_mph
+
+#OR 
+
+weather_forecast[[2]][[3]]
+
+
+
+
+#3. The temperature tomorrow.
+
+weather_forecast$Thursday$temperature_degrees
+
+#OR 
+
+weather_forecast[[1]][[1]]
+
+
+```
+
+<br>
+
+**Question 3.** \
+Find a 14 day forecast online and create a matrix of the forecasts for temperature, where each week is one row and columns correspond to days.
+
+You will want to give a name to the matrix you create.
+
+```{r}
+
+# from today the top temperatures according to the BBC are: 5, 11, 12, 13, 11, 11, 12, 13, 13, 14, 14, 12, 12, 12
+
+fortnight_forecast <- c(5, 11, 12, 13, 11, 11, 12, 13, 13, 14, 14, 12, 12, 12)
+temperature_matrix <- matrix(fortnight_forecast, nrow = 2, ncol = 7, byrow = TRUE)
+
+temperature_matrix
+```
+
+
+<br>
+
+**Question 4.** \
+From the matrix you just made select:
+
+  i. The third day of the second week
+  ii. The whole second week
+  iii. The first, third and fifth days in both weeks.
+
+
+```{r}
+#matrix_name[row, column]
+
+# 1. The third day of the second week
+
+temperature_matrix[2,3]
+
+
+
+# 2. The whole second week
+
+temperature_matrix[2, ]
+
+
+
+# 3. The first, third and fifth days in both weeks.
+
+temperature_matrix[1,c(1,3,5)]
+temperature_matrix[2,c(1,3,5)]
+
+# hmmmmm... can't work out how to join them together
+
+
+```
+
+
+<br>
+
+**Question 5.** \
+Write a function that pre-appends "The answer is: " to any character input, while for numeric input, it either just returns the number for numbers less than 10, or divides the number by 10 for numbers greater than 10. For anything else return "Invalid input".
+
+```{r}
+
+# if input is a character, "The answer is: "
+# else if number input < 10, returns the number input 
+# else if number input is > 10, number input is /10
+# else all other inputs are "Invalid input"
+
+
+input <- 4
+divide_by_ten <- input/10
+
+
+#input_function <- function(input){
+  
+  if (input == "[a-z]") {
+    print("The answer is: ")
+  } else {
+    
+    if (input < 10){
+    print(input)
+      }
+    } else {
+      
+    if (input > 10){
+      print(divide_by_ten)
+    }
+    } else {
+      print("Invalid input")
+    }
+  
+#}
+# input_function(4)
+
+
+
+# Hmmmm, I get "Invalid input" 
+# or:
+# Error in input/10 : non-numeric argument to binary operator
+# OR: 
+# Error: unexpected 'else' in: " } } else"
+# i really don't know how to change this without affecting the a-z.. which to be fair is wrong as well 
+
+```
+
+
+<br>
+
+**Question 6.** \
+Write a function which checks if two vectors have the same elements. 
+
+* If they have the same elements in the same order, return "Exactly the same"
+* If they have the same elements but in a different order, return "The same"
+* If they don't have the same elements, return "Different".
+
+```{r}
+
+#literally just brain melt guessing now...
+
+vector_one <- c(1, 3, 5, 7)
+vector_two <- c(3, 1, 7, 5)
+# test works: sort(vector_two)
+
+are_these_the_same <- function(vector_one, vector_two) {
+  if (sort(vector_one) == sort(vector_two)){
+    print("Exactly the same")
+  } else {
+    if(vector_one == vector_two){
+      print("The same")
+    }
+  } else {
+    if (vector_one != vector_two){
+      print("Different")
+    }
+  }
+}
+
+# same error again: error: Error: unexpected 'else' in:"    }  } else"
+```
+
+
+
+<details>
+<summary>**Hints**</summary>
+* You can check if two vectors have the same elements but in a different order by using `sort` to sort each vector first and then checking if they are equal.
+* Have a look at the `all()` function
+</details>
+</blockquote>
+
+
+# Extension
+
+<br>
+
+**Question 7.** \
+Write code that prints a multiplication table for numbers up to 12. i.e. there will be 12 rows and 12 columns, and each element should be the row number multiplied by the column number.
+
+*From: https://adriann.github.io/programming_problems.html*
+
+<br>
+
+**Question 8.** \
+Write a function that takes a vector, and creates a text art histogram, like the one below.
+
+You may want to use the function `cat()`. This is similar to `print()`, but prints directly, without vector markers. You can also include newlines `"\n"` when using `cat()`.
+
+```
+1 | ***
+2 | *
+3 | *******
+4 | ****
+5 | **
+```
+
