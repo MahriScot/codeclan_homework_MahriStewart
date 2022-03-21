@@ -207,7 +207,8 @@ SELECT
     fte_hours, 
     salary,
     (fte_hours * salary) AS effective_yearly_salary
-FROM employees;
+FROM employees
+WHERE fte_hours IS NOT NULL AND salary IS NOT NULL; 
 
 
 
