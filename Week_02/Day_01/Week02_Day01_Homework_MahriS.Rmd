@@ -105,6 +105,9 @@ renamed_card_details
 card_transaction_joined <- semi_join(renamed_card_details, transaction_details, by = "credit_card_id")
 card_transaction_joined
 
+#should be 
+
+# semi_join(card_base, transaction_base, by = ("card_number" = "credit_card_id"))
 
 ```
 
@@ -144,6 +147,12 @@ date_united <- hat_observations_separated %>%
 date_united
 
 
+# didn't see this part of the question -> note that the same day is sometimes observed twice
+date_united %>% 
+  filter(hat_type == "beret") %>% 
+  group_by(Date) %>% 
+  summarise(total = sum(observation_count)) %>% 
+  slice_max(total)
 
 ```
 
@@ -208,6 +217,14 @@ all_four_combined <- semi_join(card_trans_and_fraud, customer_base, "cust_id")
 
  # YAY! (though it's not in the same order...)
 
+ 
+ 
+# but the homework answers way to do it is:
+ 
+ # card_base %>% 
+#     inner_join(customer_base, by = "cust_id") %>% 
+#     inner_join(transaction_base, by = c("card_number" =         "credit_card_id")) %>% 
+ #     inner_join(fraud_base, by = "transaction_id")
 ```
 
 
@@ -235,6 +252,6 @@ exam_question_separated <- exam_scores_long %>%
   select(id, question, score)
 exam_question_separated
 
-
+# or select(-exam)
 ```
 

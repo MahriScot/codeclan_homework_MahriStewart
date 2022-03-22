@@ -219,4 +219,14 @@ non_english_ave_rating
 
 
 
+FROM HOMEWORK ANSWERS
+
+```{r}
+books %>% 
+  select_if(is.numeric) %>% 
+  select(-book_id) %>% 
+  psych::describe(fast = TRUE)
+
+# ERROR in loadNamespace(x) : there is no package called ‘psych’
+```
 

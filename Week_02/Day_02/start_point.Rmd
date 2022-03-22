@@ -148,7 +148,11 @@ str_detect(whole_text, pattern)
 
 #Yes - TRUE
 
+#FULL ANSWER
+pattern <- "[tT]hought +[pP]olice"
 
+whole_text %>%
+  str_detect(pattern)
 
 ```
 
@@ -166,8 +170,23 @@ str_count(whole_text, pattern = "Big Brother|big brother|BIG BROTHER")
 
 str_count(whole_text, pattern = "(?i)Big Brother")
 
+# IR THE GIVEN ANSWER...
 
+pattern <- "[Bb][Ii][Gg] +[Bb][Rr][Oo][Tt][Hh][Ee][Rr]"
 
+whole_text %>%
+  str_extract_all(pattern) %>%
+  flatten_chr() %>%
+  length()
+
+# If you find yourself dealing with variable casing in this way, it might be easier to use the regex() helper function.
+
+pattern <- regex("big +brother", ignore_case = TRUE)
+
+whole_text %>%
+  str_extract_all(pattern) %>%
+  flatten_chr() %>%
+  length()
 ```
 
 
@@ -191,6 +210,15 @@ Winston writes the date in a specific format: month nth, year eg. August 5th, 20
 
 pattern <- "[A-Za-z]+ [0-9]+[a-z]+, [0-9]+"
 str_extract(whole_text, pattern)
+
+#[1] "April 4th, 1984"
+
+
+# GIVEN ANSWER
+
+pattern <- "[A-Z][a-z]+ [0-9]+(th|rd|st|nd), [0-9]{4}"
+whole_text %>%
+  str_extract(pattern)
 ```
 
 
@@ -202,7 +230,7 @@ Winston wants some anonymity, redact his name somehow.
 
 pattern <- "Winston"
 str_count(whole_text, "Winston")
-
+#32
 
 
 all_winston_redacted <- str_replace_all(whole_text, pattern, replacement = "Peter")
@@ -210,7 +238,25 @@ all_winston_redacted <- str_replace_all(whole_text, pattern, replacement = "Pete
 
 
 str_count(all_winston_redacted, "Peter")
+#32
 
+
+
+# GIVEN ANSWER - REMEMBER TO LOOK FOR ALL CASES e.g. [wW]
+
+pattern <- "[wW]inston"
+
+whole_text <- whole_text %>%
+  str_replace_all(pattern, "REDACTED")
+
+#check that there are no winstons mentioned
+whole_text %>%
+  str_detect(pattern)
+
+# check that redacted is mentioned
+pattern2 <- "REDACTED"
+whole_text %>%
+  str_detect(pattern2)
 ```
 
 
@@ -235,6 +281,34 @@ replace_gin
 # 
 
   
+
+
+# GIVEN ANSWER ............................
+
+# check case where gin appears (want to make sure is the word gin, and not 'gin' in the middle of another word (e.g. beginning)
+pattern <- "[ ,\\.-][gG][iI][nN][ ,\\.-]"
+
+whole_text %>%
+  str_extract_all(pattern) %>%
+  flatten_chr()
+
+## [1] " GIN." " gin." " gin "
+##Error in flatten_chr(.) : could not find function "flatten_chr"
+
+whole_text <- whole_text %>%
+  str_replace_all(" GIN.", " VODKA.") %>%
+  str_replace_all(" gin.", " vodka.") %>%
+  str_replace_all(" gin ", " vodka ")
+
+# check
+
+pattern <- "[ ,\\.-][gG][iI][nN][ ,\\.-]"
+
+whole_text %>%
+  str_extract_all(pattern) %>%
+  flatten_chr()
+
+## character(0)
 ```
 
 
@@ -266,7 +340,30 @@ str_count(ministries_renamed_departments, "Department|Departments")
 # nope, now I am getting 0  
 
 
+
+
+
+# GIVEN ANSWER 
+
+whole_text <- whole_text %>%
+  str_replace_all("Department", "Section") %>%
+  str_replace_all("Ministry", "Department") %>%
+  str_replace_all("Ministrie", "Department") %>%
+  str_replace_all("Mini", "Dep")
+
 ```
+
+
+if you want to search for e.g. is there gin in words like sagging...
+
+```{r}
+
+whole_text %>% 
+  str_extract_all("(?i)(Department|Ministry|Ministries|Mini[a-z]+)")
+
+
+```
+
 
 
 1.1 Hints

@@ -97,9 +97,8 @@ Summarise the mean number of calories in each `beverage_category`.  Which 3 cate
 
 beverage_category_grouped <- group_by(drinks_content, Beverage_category)
 beverage_category_grouped
-summarise(beverage_category_grouped, mean_calories = mean(Calories))
-# arrange(mean_calories) # don't know how to make this work... 
-
+summarise(beverage_category_grouped, mean_calories = mean(Calories)) %>% 
+ arrange(mean_calories) # don't know how to make this work... 
 # Highest calorie drinks categories (highest first) = Smoothies, FrappuccinoÂ® Blended Coffee, Signature Espresso Drinks
 # Lowest calorie drinks categories (lowest first) = Coffee, Shaken Iced Beverages, Classic Espresso Drinks
 ```
@@ -117,6 +116,8 @@ Let's look at this a different way. What is the average number of calories in ea
 prep_grouped <- group_by(drinks_content, Beverage_prep)
 prep_grouped
 summarise(prep_grouped, mean_calories = mean(Calories))
+
+#this worked yesterday, then I added arrange(desc(mean_cals)) which didn't work, and now I get an error message that won't go away......
 
 ```
 
@@ -158,6 +159,9 @@ Which is the best type of **coffee** drink (and by 'drink' we mean the combinati
 ```{r}
 selection <- select(drinks_content, Calories, contains("Beverage"))
 filter(selection, Beverage != 'Tea') # I want to remove anything that contains Tea or Smoothie in Beverage - tried contains() but it has to be in a select (?) function (?)
+# distinct(beverage_category) shows all categories
+# non_coffee_drinks <- c("Tazo Tea Drinks", "Smoothies")
+# filter(!beverage_category %in% non_coffee_drinks)
 arrange(selection, Calories)
 
 #anyway, the answer is plain "coffee" and "Classic Espresso Drinks"

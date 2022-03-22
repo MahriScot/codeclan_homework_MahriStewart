@@ -179,6 +179,37 @@ divide_by_ten <- input/10
 # Error: unexpected 'else' in: " } } else"
 # i really don't know how to change this without affecting the a-z.. which to be fair is wrong as well 
 
+
+
+#ANSWER FROM CLASS 
+
+
+
+answer_or_divide <- function(x) {
+  if (is.character(x)) {
+    return(paste("The answer is: ", x))
+  }
+
+  if (is.numeric(x)) {
+    if (x < 10) {
+      return(x)
+    } else {
+      return(x / 10)
+    }
+  }
+
+  return("Invalid input")
+}
+
+
+answer_or_divide("forty-two")
+answer_or_divide("42")
+answer_or_divide(9)
+answer_or_divide(19)
+
+
+
+# RETURN INSTEAD OF PRINT IN A FUNCTION!!! we used print in if/else only  
 ```
 
 
@@ -214,6 +245,32 @@ are_these_the_same <- function(vector_one, vector_two) {
 }
 
 # same error again: error: Error: unexpected 'else' in:"    }  } else"
+
+
+# ANSWER FROM CLASS 
+
+is_same_vector <- function(vector_1, vector_2) {
+  if (all(vector_1 == vector_2)) {
+    return("Exactly the same")
+  }
+
+  if (all(sort(vector_1) == sort(vector_2))) {
+    return("The same")
+  }
+
+  return("Different")
+}
+
+a <- c(1, 2, 3, 4, 5)
+b <- c(1, 4, 2, 3, 5)
+c <- c(9, 4, 8, 1, 0)
+
+is_same_vector(a, a)
+is_same_vector(a, b)
+is_same_vector(a, c)
+
+
+
 ```
 
 
