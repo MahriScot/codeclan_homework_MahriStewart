@@ -12,7 +12,7 @@ SELECT
     e.last_name, 
     t.name AS team 
 FROM employees AS e 
-RIGHT JOIN teams AS t
+INNER JOIN teams AS t
 ON e.team_id = t.id;
 
 
@@ -84,7 +84,7 @@ SELECT
     e.*, 
     pd.local_account_no, 
     pd.local_sort_code,
-    t.name
+    t.name AS team
 FROM (employees AS e 
     LEFT JOIN pay_details AS pd
     ON e.pay_detail_id = pd.id)
@@ -99,7 +99,7 @@ employee belongs to.
 
 SELECT 
     e.id,
-    t.name
+    t.name AS team
 FROM employees AS e 
 LEFT JOIN teams AS t
 ON e.team_id = t.id;
@@ -112,8 +112,8 @@ Hint
 */
 
 SELECT 
-    count(e.id),
-    t.name
+    count(e.id) AS number_of_employees,
+    t.name AS team
 FROM employees AS e 
 LEFT JOIN teams AS t
 ON e.team_id = t.id
@@ -126,8 +126,8 @@ first.
 */
 
 SELECT 
-    count(e.id),
-    t.name
+    count(e.id) AS number_of_employees,
+    t.name AS team
 FROM employees AS e 
 LEFT JOIN teams AS t
 ON e.team_id = t.id
@@ -143,7 +143,7 @@ employees in each team.
 SELECT 
     t.id AS team_id,
     t.name AS team_name,
-    count(e.id)
+    count(e.id) AS number_of_employees
 FROM employees AS e 
 RIGHT JOIN teams AS t
 ON e.team_id = t.id
@@ -162,7 +162,7 @@ SELECT
     t.id AS team_id,
     t.name AS team_name,
     t.charge_cost,
-    count(e.id),
+    count(e.id) AS number_of_employees,
     (CAST(t.charge_cost AS int)) * count(e.id) AS total_day_charge 
 FROM employees AS e 
 RIGHT JOIN teams AS t
@@ -179,7 +179,7 @@ SELECT
     t.id AS team_id,
     t.name AS team_name,
     t.charge_cost,
-    count(e.id),
+    count(e.id) AS number_of_employees,
     (CAST(t.charge_cost AS int)) * count(e.id) AS total_day_charge 
 FROM employees AS e 
 RIGHT JOIN teams AS t
@@ -202,9 +202,15 @@ function].
 */
 
 SELECT 
-    
+    ec.committee_id AS committee,
+    count(DISTINCT employee_id) AS number_of_employees
 FROM employees_committees AS ec
+GROUP BY ec.committee_id;
 
+/* I can see the answer is 22 employees (2 are in 2 committees) but this shows 
+5 employees in committees 1,2,3 and 5, and 4 employees in committee 4... but 
+some of these employees are on 2 committees, so I've got more to do
+*/
 
 
 
@@ -213,5 +219,13 @@ FROM employees_committees AS ec
 How many of the employees do not serve on a committee?
 */
 
-SELECT 
-FROM employees_commi
+SELECT
+    ec.committee_id,
+    count(e.id) AS number_of_employees
+FROM employees AS e 
+LEFT JOIN employees_committees AS ec 
+ON e.id = ec.employee_id
+GROUP BY ec.committee_id;
+
+-- ^ 978 do not serve on a committee 
+
