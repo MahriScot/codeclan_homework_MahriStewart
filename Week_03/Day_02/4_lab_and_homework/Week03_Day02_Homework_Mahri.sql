@@ -212,7 +212,7 @@ GROUP BY ec.committee_id;
 some of these employees are on 2 committees, so I've got more to do
 */
 
--- answer from class -i got it but added too much 
+-- answer from class - i got it but added too much, hence the incorrect answer
 
 SELECT 
     count(DISTINCT employee_id) AS number_of_employees
@@ -232,4 +232,12 @@ ON e.id = ec.employee_id
 GROUP BY ec.committee_id;
 
 -- ^ 978 do not serve on a committee 
+-- correct, but answer from notes:
+
+SELECT 
+  COUNT(*) AS num_not_in_committees
+FROM employees e
+LEFT JOIN employees_committees ec
+ON e.id = ec.employee_id 
+WHERE ec.employee_id IS NULL;
 
