@@ -212,7 +212,11 @@ GROUP BY ec.committee_id;
 some of these employees are on 2 committees, so I've got more to do
 */
 
+-- answer from class -i got it but added too much 
 
+SELECT 
+    count(DISTINCT employee_id) AS number_of_employees
+FROM employees_committees AS ec;
 
 
 /* EXTENSION Question 6.
