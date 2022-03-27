@@ -1,0 +1,69 @@
+---
+title: "wk3_markdownHmwrk"
+output: html_document
+date: '2022-03-26'
+---
+
+**I'm not sure where I'm meant to do this work ... tables and the meme didn't work on "MARKDOWN Edit"**
+
+
+```{r}
+# Recreate the HTML document below using markdown
+```
+
+**Example**
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+</head>
+<body>
+  <h1>Welcome to our page!</h1>
+  <p>This is an example of how we <em>could</em> lay something out.</p>
+  <h3>Smaller headings are fun too!</h3>
+  <ul>
+    <li>This element is part of a list</li>
+    <li>So is this one</li>
+    <li><a href="https://http.cat/200">This one's a link too!</a></li>
+  </ul>
+</body>
+</html> 
+
+
+**MY RECREATION**
+
+# Welcome to our page!
+
+This is an example of how we _could_ lay something out. 
+
+### Smaller headings are fun too!
+
+* This element is part of a list 
+* So is this one 
+* [This one's a link too!](https://http.cat/200)
+
+
+```{r}
+# Task - 10 mins
+
+#Use the table generator to make a table storing some information. Friends’ contact details, your classmates’ favourite colours, whatever you like!
+#If you’re feeling a bit more adventurous, try importing a .csv file or building a table using one of the other markup languages
+```
+
+
+
+
+| Monday  	| Tuesday    	| Wednesday    	| Thursday   	| Friday            	|
+|---------	|------------	|--------------	|------------	|-------------------	|
+| Cycle   	| Spin Class 	| Arms and Abs 	| Lower Body 	| Full body stretch 	|
+| Stretch 	| Pilates    	| Stretch      	| Run        	| Relax             	|
+|         	|            	|              	| Stretch!   	|                   	|
+
+
+
+```{r}
+library(meme)
+u <- "https://i.imgflip.com/ohrrn.jpg"
+meme(u, "code", "all the things!")
+```
+
