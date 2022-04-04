@@ -1,0 +1,149 @@
+---
+title: "ggplot homework Week_5 Day_1"
+output: html_notebook
+date: 04/04/2022
+---
+```{r}
+library(tidyverse)
+```
+
+```{r}
+competitors <- CodeClanData::qb_competitors
+device_data <- CodeClanData::qb_device_data
+monthly_sales <- CodeClanData::qb_monthly_sales
+revenue_breakdown <- CodeClanData::qb_revenue_breakdown
+```
+
+___
+
+# 2 MVP
+
+## 2.1 Part 1 
+
+**Question 1.**
+Take the data in the dataset qb_revenue_breakdown and make a stacked bar chart 
+showing the sources of revenue across the two years in the dataset.
+
+```{r}
+ggplot(revenue_breakdown) +
+  geom_bar(aes(x = Year, y = Revenue, fill = Product), stat = "identity") +
+  labs(title = "Sources of revenue in 2018 and 2019")
+  
+```
+
+
+**Questino 2.**
+Make a line chart showing monthly sales of the “flagship product” - the ‘KwikBit 
+Unit 1’ - over the last year. This data is inside qb_monthly_sales, but you will 
+need to use filter() or subset() (base R).
+
+```{r}
+kwikbit_unit1_sales <- monthly_sales %>% 
+  filter(Cashflow == "Kwikbit Unit 1 Sales")
+
+ggplot(kwikbit_unit1_sales) +
+  geom_line(aes(x = Date, y = Amount)) +
+  labs(x = "Date",
+       y = "Total Sales", 
+       title = "Monthly sales of the Kwikbit Unit 1 over the last year")
+```
+
+
+**Question 3.**
+Make a line chart showing monthly revenue and costs over the last year. This 
+data is also in qb_monthly_sales.
+
+```{r}
+monthly_revenue_and_costs <- monthly_sales %>% 
+  filter(Cashflow != "Kwikbit Unit 1 Sales")
+
+ggplot(monthly_revenue_and_costs) +
+  geom_line(aes(x = Date, y = Amount, group = Cashflow, colour = Cashflow)) +
+  labs(x = "Date", 
+       y = "Total Amount",
+       title = "Monthly Revenue Vs Monthly Costs")
+```
+
+**Question 4.**
+Show annual sales of personal fitness trackers over the last 5 years broken down 
+by company as a ribbon plot (use geom_area). This data is in qb_competitors.
+
+```{r}
+ggplot(competitors) +
+  geom_area(aes(x = Year, y = Revenue, fill = Company, colour = Company), alpha = 0.7, size = 0.5, colour = "black") +
+  theme(axis.text.y = element_text(angle = 45, hjust = 1)) +
+  labs(x = "Year",
+       y = "Revenue", 
+       title = "Annual sales of competitors personal fitness trackers")
+# why does it change revenue values to e.g. "6e+06"? Top revenue
+# is 2,216,000 - is it a space issue? Doesn't make a differnce if # I angle it... 
+```
+
+
+**Question 5.**
+Now show the sales from the four competitors as a line graph. Include an extra 
+layer that shows the data points used to make the lines.
+
+
+```{r}
+ggplot(competitors) +
+  geom_line(aes(x = Year, y = Revenue, group = Company, colour = Company)) +
+  geom_point(aes(x = Year, y = Revenue, colour = Company)) +
+  labs(x = "Year", 
+       y = "Total Revenue", 
+       title = "Competitors Sales")
+```
+
+
+**Question 6.**
+Now the company wants to compare the number of steps that their device counts 
+vs. their competitors. Make a line graph of the number of steps throughout time,
+and use faceting to compare between companies and people. The data for this is 
+in qb_device_data.
+
+
+Attempt 1 (more below) - this isn't right...?
+Struggling with what to put on the x axis especially.
+```{r}
+ ggplot(device_data) +
+  aes(x = hours, y = counts, group = device, colour = id) +
+  geom_line() +
+  facet_wrap(device ~ id)
+```
+
+Attempt 2 - this isn't right...? the lines change colour whichever way round I 
+do it.
+```{r}
+ggplot(device_data) +
+  aes(x = counts, y = hours, group = device, colour = id) +
+  geom_line() +
+  facet_wrap(device ~ id)
+```
+
+Attempt 3. Not correct - I surely want more lines than this 
+```{r}
+total_steps_and_time <- device_data %>% 
+  group_by(id, device) %>% 
+  mutate(total_steps = sum(counts, na.rm = TRUE), 
+            total_time = sum(hours, na.rm = TRUE) + sum(mins/60, na.rm = TRUE))
+
+ggplot(total_steps_and_time) +
+  aes(x = id, y = total_steps, group = device, colour = device) +
+  geom_line() #+
+  # facet_wrap(device ~ id)
+```
+
+
+
+
+```{r}
+ggplot(device_data) +
+  geom_line(
+    aes(x = hours, y = counts, group = id, colour = device))
+```
+
+
+
+
+
+
