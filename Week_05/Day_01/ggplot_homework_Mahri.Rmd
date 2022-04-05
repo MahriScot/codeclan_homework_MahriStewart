@@ -175,3 +175,10 @@ ggplot(device_data) +
 
 
 
+col_scheme <- c("Accessories" = "#E89FE9", "Smart Watches" = "E24GHK2", etc)
+
+^ this will help you change the colours as you wish! Give each colour in the 
+vector an appropriate name... you put this in your ggplot line (at the end)
+
+theme(title = element_text(..))+
+scale_fill_manual(values = col_scheme)
