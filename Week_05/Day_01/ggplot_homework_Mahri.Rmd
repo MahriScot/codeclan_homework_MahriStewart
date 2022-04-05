@@ -29,6 +29,12 @@ ggplot(revenue_breakdown) +
   geom_bar(aes(x = Year, y = Revenue, fill = Product), stat = "identity") +
   labs(title = "Sources of revenue in 2018 and 2019")
   
+#OR 
+
+ggplot(revenue_breakdown) +
+  aes(x = Year, y = Revenue, fill = Product) +
+  geom_col() +
+  labs(title = "Sources of revenue in 2018 and 2019")
 ```
 
 
@@ -46,6 +52,13 @@ ggplot(kwikbit_unit1_sales) +
   labs(x = "Date",
        y = "Total Sales", 
        title = "Monthly sales of the Kwikbit Unit 1 over the last year")
+
+#OR from the answers 
+kwikbit_sales <- subset(monthly_sales, Cashflow == "Kwikbit Unit 1 Sales")
+
+ggplot(kwikbit_sales) +
+ aes(x = Date, y = Amount) +
+  geom_line() 
 ```
 
 
@@ -75,8 +88,8 @@ ggplot(competitors) +
   labs(x = "Year",
        y = "Revenue", 
        title = "Annual sales of competitors personal fitness trackers")
-# why does it change revenue values to e.g. "6e+06"? Top revenue
-# is 2,216,000 - is it a space issue? Doesn't make a differnce if # I angle it... 
+# why does it change revenue values to e.g. "6e+06"? I think that means 6000000
+# but is it a space issue? Doesn't make a difference if I angle it... 
 ```
 
 
