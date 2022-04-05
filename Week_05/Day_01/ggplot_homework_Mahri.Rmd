@@ -101,6 +101,19 @@ vs. their competitors. Make a line graph of the number of steps throughout time,
 and use faceting to compare between companies and people. The data for this is 
 in qb_device_data.
 
+**homework answer - my attempts below, if I had combined a few bits of what** 
+**I'd tried then I might have gotten there**
+```{r}
+device_data <- 
+mutate(device_data, decimal_hour = hours + (mins/60))
+
+ggplot(device_data) +
+  aes(x = decimal_hour, y = counts) +
+  geom_line() + 
+  facet_grid(id ~ device)
+```
+
+
 
 Attempt 1 (more below) - this isn't right...?
 Struggling with what to put on the x axis especially.
