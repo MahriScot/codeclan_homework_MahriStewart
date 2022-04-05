@@ -82,6 +82,7 @@ Show annual sales of personal fitness trackers over the last 5 years broken down
 by company as a ribbon plot (use geom_area). This data is in qb_competitors.
 
 ```{r}
+options(scipen = 999)
 ggplot(competitors) +
   geom_area(aes(x = Year, y = Revenue, fill = Company, colour = Company), alpha = 0.7, size = 0.5, colour = "black") +
   theme(axis.text.y = element_text(angle = 45, hjust = 1)) +
@@ -90,6 +91,7 @@ ggplot(competitors) +
        title = "Annual sales of competitors personal fitness trackers")
 # why does it change revenue values to e.g. "6e+06"? I think that means 6000000
 # but is it a space issue? Doesn't make a difference if I angle it... 
+# answers show to add options(scipen = 999) at the top and it changes it 
 ```
 
 
