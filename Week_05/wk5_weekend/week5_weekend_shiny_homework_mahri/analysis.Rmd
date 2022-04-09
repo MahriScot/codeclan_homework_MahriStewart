@@ -1,0 +1,65 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+```{r}
+library(tidyverse)
+library(ggplot2)
+library(CodeClanData)
+```
+
+```{r}
+
+game_sales %>% 
+  select(genre) %>% 
+  group_by(genre) %>% 
+  summarise(count = n())
+# there are 12 genres
+```
+
+
+```{r}
+game_sales %>% 
+  ggplot() +
+  aes(x = platform, y = sales) +
+  geom_col()
+```
+
+
+Change this to a plot showing critic score vs user score for each genre (chosen
+from a drop down)
+```{r}
+game_sales %>%
+ # filter(genre == "Action") %>% 
+  ggplot() +
+  aes(x = critic_score, y = user_score) +#, colour = genre) +
+  geom_point() +
+  facet_wrap(~genre)
+```
+
+
+
+```{r}
+game_sales %>%
+  filter(genre == "Action") %>% 
+  ggplot() +
+  aes(x = critic_score, y = user_score, colour = platform) +
+  geom_point()
+```
+
+
+```{r}
+game_sales %>% 
+  ggplot() +
+  aes(x = platform, y = sales) +
+  geom_col() +
+  facet_wrap(~genre)
+```
+
+
+
+
+
+
+
+

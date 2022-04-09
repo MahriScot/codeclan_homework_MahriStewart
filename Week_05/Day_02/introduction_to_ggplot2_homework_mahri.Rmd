@@ -351,4 +351,14 @@ theme(legend.position = "none")
 "Everything still seems to be the same. Women seem to be reporting more backpack than men.
 
 
-Sum up: the main area of focus seems to be on the differences in reported backpain across the different biological sexes. That’s maybe an area to focus on. Plus, collect more data so we can do the analysis across majors and years more thoroughly."
+Sum up: the main area of focus seems to be on the differences in reported 
+backpain across the different biological sexes. That’s maybe an area to focus 
+on. Plus, collect more data so we can do the analysis across majors and years 
+more thoroughly."
+
+
+
+
+
+
+
