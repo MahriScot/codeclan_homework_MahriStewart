@@ -11,10 +11,11 @@ library(CodeClanData)
 ```{r}
 
 game_sales %>% 
-  select(genre) %>% 
-  group_by(genre) %>% 
+  select(platform) %>% 
+  group_by(platform) %>% 
   summarise(count = n())
 # there are 12 genres
+
 ```
 
 
