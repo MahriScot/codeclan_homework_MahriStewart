@@ -26,7 +26,6 @@ titanic_crew_or_pax <- titanic_passengers %>%
                            "restaurant staff", 
                            "deck crew"), .before = 4)
 titanic_crew_or_pax
-view(titanic_crew_or_pax)
 ```
 
 Some time after the disaster a journalist wrote that crew members were more 
@@ -121,31 +120,24 @@ For part i, rowSums(.) may help you setup up the necessary random variable total
 four_dice <- rolldie(4) %>% 
   mutate(four_dice_total = rowSums(.))
 
-four_dice_56or7 <- four_dice %>% 
+four_dice_5_6or7 <- four_dice %>% 
   filter(four_dice_total >= 5 & four_dice_total <= 7)
   
-four_dice_56or7 %>% 
+four_dice_5_6or7 %>% 
   summarise(size_of_sample = n())
 # Sample size for four dice being rolled where the total of the four dice is 
 # 5, 6, or 7, is 34 
   
- 
-# prob_of_5_6_or_7 <- four_dice_56or7 %>%
-#   tabyl(X1, X2, X3, X4) %>%
-#   adorn_totals(where = c("row", "col")) %>%
-#   adorn_percentages(denominator = "all") %>%
-#   adorn_title(col_name = "Is the total 5 6 or 7")
-# prob_of_5_6_or_7
 
-prob_5_6_or_7 <- four_dice_56or7 %>%
+prob_5_6_or_7 <- four_dice_5_6or7 %>%
   summarise(prob = n() / nrow(four_dice))
 prob_5_6_or_7
 
 # the probability of rolling 4 dice and seeing a total of 5, 6, or 7, is 0.03 
 #(0.026)
 
-#Here, the assumptions I have applied is that order matters and so repeats are 
-# allowed
+# Here, the assumption I have applied is that order matters and so repeats are 
+# allowed. I.e. there is 2, 1, 1, 1 and also 1, 2, 1, 1 etc. 
 ```
 
 
@@ -160,6 +152,18 @@ Hint
 This is an arrangement where order matters. Of all the possible arrangements, 
 how many are correct?
 
+*Answer*
+```{r}
+chairs <- 1:5
+people <- c("tallest", "tall", "average", "short", "shortest")
+tibble(chairs = chairs, height = people)
+
+permutations(n = 5, r = 5, v = people,
+             repeats.allowed = FALSE)
+# there are 120 permutations so 1/120
+# probability = 0.008
+
+```
 
 
 
