@@ -53,7 +53,7 @@ mainPanel(
                     
                fluidRow(
                  column(8, 
-                    plotOutput("rating_plot")),
+                    plotlyOutput("rating_plot")),
                  column(4, 
                     tableOutput("ratings_table"))
       )
@@ -97,9 +97,9 @@ mainPanel(
 
 server <- function(input, output) {
   
-    output$rating_plot <- renderPlot({
+    output$rating_plot <- renderPlotly({
       
-    #score_plot_details <- 
+    score_plot_details <- 
     game_sales %>% 
       filter(year_of_release == input$year_input) %>% 
       ggplot() + 
@@ -118,7 +118,7 @@ server <- function(input, output) {
            fill = "Name") +
       theme(axis.text.x = element_text(angle = 45),
             legend.position = "none") 
-      #ggplotly(score_plot_details)
+    ggplotly(score_plot_details)
   })
   
     output$ratings_table <- renderTable({
