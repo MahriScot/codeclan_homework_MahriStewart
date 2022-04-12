@@ -37,6 +37,8 @@ was true, i.e. passengers were more likely to have survived than crew.
 Calculate the conditional probabilities prob(survived∣crew) and
 prob(survived∣passenger) to settle this dispute.
 
+*I was wrong - Class answer is below mine*
+*I think my contingency table is correct though*
 ```{r}
 prob_of_survival <- titanic_crew_or_pax %>% 
   tabyl(crew, survived) %>% 
@@ -61,6 +63,25 @@ prob_pax_survival
 ```
 The probability of being a passenger and surviving was higher (22.7%) than that 
 of being a member of staff and surviving (9.6%)
+
+
+*this is the correct answer from class* 
+```{r}
+titanic_probs <- titanic %>%
+  group_by(crew) %>%
+  summarise(prob = sum(survived == "yes") / n()) 
+
+titanic_probs
+# Crew = 0.24, Passenger = 0.38
+
+#So passengers were 1.6 times more likely to have #survived the disaster than crew.
+```
+
+
+
+
+
+
 
 
 
