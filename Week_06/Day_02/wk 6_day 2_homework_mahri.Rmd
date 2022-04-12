@@ -1,0 +1,145 @@
+---
+title: "Week 6 - Day 2 - Homework"
+output: html_notebook
+date: 12/04/2022
+---
+```{r}
+library(tidyverse)
+library(janitor)
+```
+
+
+
+
+
+**Distributions homework**
+
+You are given a cut of a database containing details of mobile phones and their
+customer reviews on an online shopping site in file 20190928-items.csv. Each row 
+in the data corresponds to one model of mobile phone. Use the data to answer the 
+following questions.
+
+As part of the MVP we want you not to just run the code but also have a go at 
+intepreting the results - this is the main learning objective from this 
+homework. Don’t worry if you aren’t sure, it’s ok to get it wrong, but give it 
+a go, through trying we will learn.
+
+
+
+1 MVP
+
+**Question 1.**
+Load the data, clean_names() and explore it.
+
+```{r}
+mobile_reviews <- read_csv("data/20190928-items.csv")
+
+mobile_reviews %>% 
+  clean_names()
+```
+
+```{r}
+view(mobile_reviews)
+names(mobile_reviews)
+glimpse(mobile_reviews)
+head(mobile_reviews, 10)
+```
+
+**Question 2.**
+Find the brand with the highest numbers of phones in the dataset.
+```{r}
+mobile_reviews %>% 
+  group_by(brand) %>% 
+  summarise(phone_count = n()) %>% 
+  arrange(desc(phone_count))
+# The brand with the highest number of models in the dataset is Samsung with 397
+# phones
+```
+
+
+
+**Question 3.**
+For your top brand, plot the distribution of phone ratings as a probability 
+density, overlaying a fitted normal distribution. Do you think the normal 
+distribution provides a good model of these ratings?
+- Hint -
+You will need to calculate the mean() and sd() of the ratings to plot the 
+appropriate normal distribution. Alternatively, investigate using the fitdistr()
+function in the MASS package]
+
+```{r}
+samsung_only <- mobile_reviews %>% 
+  filter(brand == "Samsung")
+
+samsung_only %>% 
+  summarise(
+    mean_samsung_ratings = mean(rating), 
+    sd_samsung_ratings = sd(rating)
+  )
+
+# mean is 3.57
+# SD is 0.68
+
+# use a probability density function
+# it's 1 to 5 but goes up in .10s
+#
+# rating = seq(1, 5, by = 0.1),
+```
+
+```{r}
+samsung_ratings_distribution <- tibble(
+  x = seq(1, 5, by = 0.1),
+  y = dnorm(x = x, mean = 3.57, sd = 0.68),
+  normal = dnorm(x = x, mean = 3, sd = 0.5),
+  another_normal = dnorm(x = x, mean = 3, sd = 1)
+)
+samsung_ratings_distribution
+# I'm not sure what to put the normal SD as... I thought 1 but it doesn't look quite right (blue line)? And I just presumed I make the mean 3 as it's in the middle of 1 and 5?
+
+samsung_ratings_distribution %>% 
+  ggplot() +
+  geom_line(aes(x = x, y = y), col = "black") +
+  geom_line(aes(x = x, y = normal), col = "red") + 
+  geom_line(aes(x = x, y = another_normal), col = "blue") 
+```
+
+
+
+**Question 4.**
+We can be more quantitative in comparing the distribution of top brand ratings 
+with a normal distribution. You calculated the mean() and sd() of your 
+distribution in an earlier question. Use these values to calculate the 
+proportions of ratings within one-, two- and three standard deviations of the 
+mean. Compare these proportions with those you expect for a normal distribution.
+
+*Hint*
+You can use a filter() to get only the ratings within one-, two- and three standard deviations of the mean, and then think about how to calculate what proportion each of these filtered sets make of the total number of ratings. You’ll need to use three separate filter() and summarise() pipes to do this.
+*Further hint - code to filter within one SD*
+Here’s the code to filter and summarise the proportion of ratings within one standard deviation of the mean.
+```{r}
+samsung_stats <- samsung_only %>% 
+  summarise(
+    mean = mean(rating), 
+    sd = sd(rating)
+  )
+
+samsung_only %>%
+  filter(rating >= samsung_stats$mean - samsung_stats$sd) %>%
+  filter(rating <= samsung_stats$mean + samsung_stats$sd) %>%
+  summarise(prop_within_1sd = n() / nrow(samsung_only))
+
+# within 1 sd = 0.79, as normal distribution is at least 68.27 I would say it's 
+# maybe ok but it's quite far away.
+# I'm not sure where to go from here. 
+```
+
+For a normal distribution: 
+```{r}
+100 * (pnorm(q = 1) - pnorm(q = -1))
+# 68.27 within one sd
+100 * (pnorm(q = 2) - pnorm(q = -2))
+# 95.45 within 2 sd
+100 * (pnorm(q = 3) - pnorm(q = -3))
+# 99.73 within 3 sd
+```
+
