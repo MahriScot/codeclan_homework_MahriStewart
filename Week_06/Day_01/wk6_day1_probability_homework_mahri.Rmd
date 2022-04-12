@@ -38,6 +38,7 @@ Calculate the conditional probabilities prob(survived∣crew) and
 prob(survived∣passenger) to settle this dispute.
 
 *I was wrong - Class answer is below mine*
+*I divided by the whole data set rather than by just crew or just pax grouped. REMEMBER - "GIVEN THAT"*
 *I think my contingency table is correct though*
 ```{r}
 prob_of_survival <- titanic_crew_or_pax %>% 
