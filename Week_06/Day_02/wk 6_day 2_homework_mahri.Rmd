@@ -86,6 +86,8 @@ samsung_only %>%
 # rating = seq(1, 5, by = 0.1),
 ```
 
+
+WHAT I HAVE DONE BELOW IS WRONG (I forgot to put in ..density.. as I got confused, but I think my line is correct) - see answers from class after the below 
 ```{r}
 samsung_ratings_distribution <- tibble(
   x = seq(1, 5, by = 0.1),
@@ -102,6 +104,31 @@ samsung_ratings_distribution %>%
   geom_line(aes(x = x, y = normal), col = "red") + 
   geom_line(aes(x = x, y = another_normal), col = "blue") 
 ```
+
+
+answer from class
+```{r}
+samsung_stats <- samsung_only %>% 
+  summarise(
+    mean_samsung_ratings = mean(rating), 
+    sd_samsung_ratings = sd(rating)
+  )
+
+samsung_only %>%
+  ggplot(aes(x = rating)) +
+  geom_histogram(aes(y = ..density..), col = "white") +
+  stat_function(
+    fun = dnorm, 
+    args = list(
+      mean = samsung_stats$mean,
+      sd = samsung_stats$sd
+    ),
+    col = "red"
+  )
+
+## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
+```
+"It’s a reasonable fit: the distribution is roughly bell-shaped. The main problems seem to be a larger number of ratings in the tails of the distribution than are predicted by the normal, at ratings 1, 2 and 5"
 
 
 
@@ -143,3 +170,24 @@ For a normal distribution:
 # 99.73 within 3 sd
 ```
 
+i was correct for 1 SD... for 2 and 3 (answer from class - need to change names for it to work):
+
+```{r}
+samsung_ratings %>%
+  filter(rating >= samsung_stats$mean - 2 * samsung_stats$sd) %>%
+  filter(rating <= samsung_stats$mean + 2 * samsung_stats$sd) %>%
+  summarise(prop_within_2sd = n() / nrow(samsung_ratings))
+```
+
+```{r}
+samsung_ratings %>%
+  filter(rating >= samsung_stats$mean - 3 * samsung_stats$sd) %>%
+  filter(rating <= samsung_stats$mean + 3 * samsung_stats$sd) %>%
+  summarise(prop_within_3sd = n() / nrow(samsung_ratings))
+```
+
+"For a normal distribution, expect 68% of values to fall within one standard deviation of the mean. Here, 79% of ratings are within this range, so our distribution is slightly too central.
+
+Adding another standard deviation to either side should increase the proportion of values by 27% to 95% overall in a normal distribution. Our distribution adds 13%, going to 92% overall, so there are too few values in the range from one- to two standard deviations.
+
+Finally, in a normal distribution, adding a further standard deviation to either side should increase the proportion of values by 4.7% to 99.7% overall. Our distribution adds 6% to 98%, so this is pretty close."
