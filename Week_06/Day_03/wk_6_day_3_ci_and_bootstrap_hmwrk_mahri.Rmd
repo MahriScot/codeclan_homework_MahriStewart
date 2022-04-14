@@ -1,0 +1,207 @@
+---
+title: "CI and Bootstrap Homework - Week 6 - Day 3"
+output: html_notebook
+---
+
+**1 MVP**
+Now we’ll go back to CI creation in the normal fashion. We’ll take the ames data 
+from the CIs lab earlier today and regard it now as a sample, we won’t be drawing 
+any smaller samples from within it. This is the usual situation in an analysis: 
+you use all the data available to you!
+
+```{r}
+library(tidyverse)
+library(infer)
+library(janitor)
+library(here)
+```
+
+**Task 1.**
+Load the data again, clean_names(), and re-familiarise yourself with it
+
+```{r}
+ames <- read_csv("data/ames.csv") %>% 
+  clean_names()
+
+glimpse(ames)
+```
+
+
+**Task 2.**
+Investigate the distribution of lot_area. Is the distribution roughly normal? If not, what problems do you find?
+```{r}
+ames %>% 
+  ggplot() +
+  aes(x = lot_area) +
+  geom_histogram(fill = "sea green", col = "black", alpha = 0.7)+ 
+  coord_cartesian(xlim = c(1000, 220000))
+
+
+# lot_area is right skewed
+# if I put col="white" in the geom_histogram, you can't really see the full
+# extent of the right skew. 
+```
+
+
+
+**Task 3.**
+Compute and visualise a bootstrap sampling distribution for the mean(lot_area) 
+of the sold houses.
+
+```{r}
+# we're not taking smaller samples so is the sample size 2930? (there are 2930 
+# rows)
+# my computer won't run 2930 happily, it keeps terminating. so I'll try with 
+# 2000 (which took at least a minute):
+
+bootstrap_sampling <- ames %>% 
+  rep_sample_n(size = 2000, replace = TRUE, reps = 5000) %>% 
+  summarise(
+    mean_lot_area = mean(lot_area)
+  )
+
+bootstrap_sampling
+
+
+bootstrap_sampling_hist <- bootstrap_sampling %>% 
+  ggplot() +
+  aes(x = mean_lot_area) + 
+  geom_histogram(fill = "sea green", col = "black")+ 
+  coord_cartesian(xlim = c(9500, 11000))
+bootstrap_sampling_hist
+```
+
+
+
+
+**Task 4.**
+Use your bootstrap distribution to calculate a 95% CI for mean(lot_area), and visualise it on the distribution
+
+```{r}
+# ci_95 <- bootstrap_sampling %>% 
+#   summarise(
+#     mean = mean(mean_lot_area), 
+#     lower_bound = quantile(mean_lot_area, probs = 0.025),
+#     upper_bound = quantile(mean_lot_area, probs = 0.975)
+#   )
+# 
+# ci_95
+# Mean = 10,145.5
+# Lower Bound = 9,830.748
+# Upper Bound = 10,516.35
+
+
+
+infer_resample <- ames %>% 
+  #which variable we are interested in
+  specify(response = lot_area) %>% 
+  #generate the replicates to resample
+  generate(reps = 5000, type = "bootstrap") %>% 
+  # statistic we are interested in for each resample
+  calculate(stat = "mean")
+
+infer_resample
+
+infer_ci_95 <- infer_resample %>% 
+  get_confidence_interval(level = 0.95, type = "percentile")
+
+infer_ci_95
+# lower ci = 9,871.338
+# upper ci = 10,446.97
+
+
+infer_resample %>% 
+  visualise(bins = 30) +
+  shade_confidence_interval(endpoints = infer_ci_95)
+
+```
+
+
+Task 5.
+You would like to know the mean(lot_area) of the sold houses with higher 
+confidence. Calculate the 99% CI for this variable (you can re-use your 
+bootstrap distribution from above). Is it narrower or broader than the 95% CI? 
+Does that make sense?
+
+```{r}
+infer_resample <- ames %>% 
+  #which variable we are interested in
+  specify(response = lot_area) %>% 
+  #generate the replicates to resample
+  generate(reps = 5000, type = "bootstrap") %>% 
+  # statistic we are interested in for each resample
+  calculate(stat = "mean")
+
+infer_resample
+
+infer_ci_99 <- infer_resample %>% 
+  get_confidence_interval(level = 0.99, type = "percentile")
+
+infer_ci_99
+# lower ci = 9,789.697
+# upper ci = 10,523.41
+
+
+infer_resample %>% 
+  visualise(bins = 30) +
+  shade_confidence_interval(endpoints = infer_ci_99)
+
+# The 99% CI is broader. This does make sense as the wider the sample (?) the 
+# more we chances we give ourselves of having the mean included
+
+```
+
+
+
+Task 6.
+Calculate the point estimate of the mean(lot_area)
+
+
+```{r}
+
+point_estimate_lot_area <- ames %>% 
+  rep_sample_n(size = 2930, reps = 1) %>% 
+  summarise(
+    mean_lot_area = mean(lot_area)
+  )
+  
+point_estimate_lot_area
+
+# The mean for lot_area is 10,147.92
+```
+
+
+
+2 Extension
+
+
+Task 1.
+Calculate a point estimate and 95% CI for the proportion of houses in the data 
+built before 1920. Does the number of reps you use matter? 
+[Investigate reps from 200 up to 50000, memory of your laptop permitting].
+
+
+oops... i thought i finished this!
+```{r}
+built_before_1920 <- ames %>% 
+  filter(year_built <= 1920)
+built_before_1920
+#there are 233 of them
+
+point_estimate_1920 <- built_before_1920 %>% 
+  rep_sample_n(size = 233, reps = 200) %>% 
+  summarise(
+    mean_lot_area = mean(lot_area)
+  )
+  
+point_estimate_1920
+
+point_estimate_1920_more_reps <- built_before_1920 %>% 
+  rep_sample_n(size = 233, reps = 1000) %>% 
+  summarise(
+    mean_lot_area = mean(lot_area)
+  )
+  
+point_estimate_1920_more_reps
+```
+
