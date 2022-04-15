@@ -1,0 +1,330 @@
+---
+title: "Week 6 - Weekend Homework - Mahri"
+output: html_notebook
+---
+
+# Hypothesis tests & probability - homework
+
+## MVP
+
+### Hypothesis testing - practical
+
+You work for an animal conservation organisation and are looking to do some 
+investigating into some of the animals to provide evidence for some projects 
+you are looking to run. 
+
+In this homework we'll use the `msleep` data set provided in the `ggplot` 
+package. It concerns the sleeping patterns of various types of mammal.
+
+```{r}
+library(tidyverse)
+library(ggplot2)
+library(janitor)
+library(infer)
+```
+
+<br>
+
+**Question 1.**  
+Explore the dataset and familiarise yourself with it.
+
+```{r}
+data(msleep)
+glimpse(msleep)
+head(msleep, 10)
+
+```
+
+<br>
+
+**Question 2.**  
+Jabberwockies sleep for around 7 hours a night, on average. Perform an 
+appropriate statistical test to determine whether the mean `sleep_total` in the 
+sampled population of animal types differs from the typical value for 
+jabberwockies.
+
+```{r}
+obs_stat_sleep_total <- msleep %>% 
+  summarise(mean_sleep = round(mean(sleep_total), 2))
+obs_stat_sleep_total
+# The mean sleep total for all animals = 10.43 hours
+
+# Does the mean DIFFER from the population sample mean - two tailed as it's not
+# asking if it's more or less.
+
+# H0: There is no difference between the mean hours of sleep for jabberwockies
+# and the population.
+# H1: The mean hours of sleep for the population differs from that of the 
+# jabberwockies.
+
+# create a null distribution
+# 7 is the average hours of sleep for the jabberwockie (mu = hypothesis mean
+#  and we're hypothesizing that the population mean is the same)
+null_distribution_total_sleep <- msleep %>% 
+  specify(response = sleep_total) %>% 
+  hypothesise(null = "point", mu = 7) %>% 
+  generate(reps = 50000, type = "bootstrap") %>% 
+  calculate(stat = "mean")
+null_distribution_total_sleep
+ 
+
+# Visualise. The red line will be our observed stat i.e. the mean for the 
+# population.
+# The bars will be the means of means.
+null_distribution_total_sleep %>% 
+  visualise(bins = 30) +
+  shade_p_value(obs_stat = obs_stat_sleep_total, direction = "both")
+
+# p value 
+p_value_sleep_total <- null_distribution_total_sleep %>% 
+  get_p_value(obs_stat = obs_stat_sleep_total$mean_sleep, direction = "both")
+p_value_sleep_total
+
+# p = 0.
+# As p < 0.05, we can reject our null hypothesis in favour of the alternative
+# hypotheseis - the mean hours of sleep for the population differs from that of 
+# the jabberwockies.
+```
+
+
+<br>
+
+**Question 3.**  
+Perform an appropriate statistical test to determine whether omnivores sleep for 
+significantly longer than herbivores, on average.
+
+```{r}
+# This is one tailed (right-tailed) ("do they sleep MORE")
+
+# H0: Omnivores do not sleep for a significantly longer time than herbivores. 
+# H1: Omnivores sleep for a significantly longer time than herbivores. 
+
+
+omnis_and_herbis <- msleep %>% 
+  filter(vore %in% c("omni", "herbi"))
+
+omnis_and_herbis %>% 
+  group_by(vore) %>% 
+  summarise(count = n())
+# There are 20 omnivores and 32 Herbivores
+
+
+omnis_and_herbis %>% 
+  ggplot()+ 
+  aes(x = sleep_total, y = vore) +
+  geom_boxplot() 
+# Just having a look. The average scores are quite close but very different 
+# ranges - omnivores mostly sleep for similar amounts of time with some 
+# outliers, herbivores much more spread 
+```
+
+Theoretical distribution: (observed below)
+```{r}
+null_distribution_omni_herbi <- omnis_and_herbis %>% 
+  specify(sleep_total ~ vore) %>% 
+  hypothesise(null = "independence") %>% 
+  generate(reps = 5000, type = "permute") %>% 
+  calculate(stat = "diff in means", order = c("omni", "herbi"))
+null_distribution_omni_herbi
+```
+
+Observed/ empirical distribution (theoretical above) and p-value:
+```{r}
+observed_stat_omni_herbi <- omnis_and_herbis %>% 
+  specify(sleep_total ~ vore) %>% 
+  calculate(stat = "diff in means", order = c("omni", "herbi"))
+observed_stat_omni_herbi
+# 1.42 (it's positive (just?) so shows that omnis sleep for longer than herbis
+# (?)
+
+
+null_distribution_omni_herbi %>% 
+  get_p_value(obs_stat = observed_stat_omni_herbi, direction = "right")
+
+# As p > 0.05 (p = 0.12) we can not reject the null hypothesis that omnivores
+# do not sleep for a significantly longer time than herbivores. 
+```
+Visualise and p-value:
+One tail so shading only on the right. Red line = observed stat
+```{r}
+null_distribution_omni_herbi %>% 
+  visualise() + 
+  shade_p_value(obs_stat = observed_stat_omni_herbi, direction = "right")
+
+
+```
+
+
+
+<br>
+
+**Question 4. **
+Perform an appropriate statistical test to determine whether the proportion of 
+domesticated animal types in the population of animal types is greater than 5%
+**Hint**
+Think about creating an `is_domesticated` variable for the analysis
+
+
+```{r}
+# one tailed test (domesticated greater than 5%) and PROPORTION not mean
+
+# H0: Domesticated animals do not make up more than 5% of the population 
+# H1: Domesticated animals make up at least 5% of the population
+
+# Create is_domesticated column 
+# There were: True = 10, False = 44, NA = 29
+# Should I take out the NAs? Having looked at them, I'd say it's very unlikely 
+# many of them have been domesticated, so I haven't... 
+domesticated_or_not <- msleep %>% 
+  mutate(conservation = replace_na(conservation, "no")) %>% 
+  mutate(is_domesticated = conservation == "domesticated", .after = 5)
+domesticated_or_not
+
+domesticated_or_not %>% 
+  group_by(is_domesticated) %>% 
+  summarise(count = n())
+# Now 73 false and 10 true.
+
+# Looking at the proportion of domesticated animals
+domesticated_or_not %>%
+  group_by(is_domesticated) %>%
+  summarise(prop = n()/nrow(domesticated_or_not)) %>%
+  filter(is_domesticated == TRUE)
+# 0.12 = 12% which is of course higher than 5% but we want to do a statistical 
+# test to make sure this is not due to sampling variation. (this is the observed
+# stat using dplyr which I've done again below with infer functions)
+```
+
+Drawing: 
+```{r}
+null_distribution_domesticated <- domesticated_or_not %>%
+  specify(response = is_domesticated, success = "TRUE") %>% 
+  hypothesize(null = "point", p = 0.05) %>%  # this 0.05 is because we're interested in 5%
+  generate(reps = 5000, type = "draw") %>%
+  calculate(stat = "prop") #specify that the stat is proportion 
+null_distribution_domesticated
+```
+
+visualise: 
+```{r}
+null_distribution_domesticated %>% 
+  visualise(bins = 30)
+```
+
+observed stat (calculated above with dplyr but now using infer functions for use
+in hypothesis testing): 
+```{r}
+observed_stat_domesticated <- domesticated_or_not %>% 
+  specify(response = is_domesticated, success = "TRUE") %>% 
+  calculate(stat = "prop")
+
+observed_stat_domesticated
+# 0.12 
+```
+```{r}
+null_distribution_domesticated %>%
+  visualise(bins = 30) + #remembering that it is a '+' here not '%>%' because using ggplot functionality to visualise
+  shade_p_value(obs_stat = observed_stat_domesticated, direction = "both")
+```
+p value:
+```{r}
+p_value_domesticated <- null_distribution_domesticated %>%
+  get_p_value(obs_stat = observed_stat_domesticated, direction = "both")
+
+p_value_domesticated
+
+# p = 0.02 (0.0156) 
+# As p < 0.05 we can reject the null hypothesis in favour of the alternative 
+# hypothesis that domesticated animals make up at least 5% of the population
+
+# Please note I changed NAs to FALSE so the homework answer might be different
+```
+
+
+
+<hr>
+
+## Hypothesis testing - Defining the Hypothesis 
+
+For the following three business problems write out:
+
+* What kind of test you would use  
+*  $H_0$ and $H_a$ in **both** mathematical notation and in words. 
+* Also state the method you would use to generate the null distribution 
+(bootstrap, permutation or simulation). 
+
+<br>
+
+**Question 1.**  
+You work for a independent coffee shop. The boss tells you that she thinks that 
+around $40\%$ of people in the town (population $30,000$) know of the coffee 
+shop, but you are skeptical of the estimate. You conduct a random survey of 
+$200$ people in the town, asking if respondents are aware of your coffee shop. 
+You want to use the sample to test the hypothesis that $40\%$ or more of the 
+town's population have heard of the coffee shop. 
+
+<br>
+
+**Question 2.**  
+You work for a website design company and have performed an **A/B test** on the 
+position of a banner on a website promoting a particular item. 
+<br><br>
+<div class='emphasis'>
+**A/B testing** 
+A method comparing two versions of a web page, email, flyer or other marketing 
+device against each other to determine which version performs better. As it is 
+essentially a controlled experiment, the design should try to ensure that the
+groups experiencing both versions of the marketing device are equivalent and 
+representative of the population.
+</div>
+<br><br>
+You selected five days at random last month and then randomly selected $200$ of
+each sampled day's users into group $A$ and another $200$ of that day's users 
+into group $B$. Group $A$ continued to be shown the banner at the right hand 
+side of the webpage (its usual position) while group $B$ was shown the banner 
+at the top of the page. You monitored each sampled user's interactions with the 
+website, in particular the 'click through rate' (CTR) on the banner, i.e. what 
+proportion of sampled users clicked on the banner. You want to use the sampled 
+data to test the hypothesis that website users overall are more likely to click 
+on the banner if positioned at the top of the page   
+<br>
+
+**Question 3.**  
+You work as an analyst for a car manufacturing company - they have specific 
+standards they must meet for standards and regulation purposes. You have been 
+asked to check the quality control of the manufacture of a particular car part. 
+You have been given data on a sample of $200$ parts produced over the period of 
+a week (the sampled parts were pulled at random from the production line and 
+measured: the factory produced a lot more than $200$ parts that week). The 
+specification of the part stipulates a width of $145\textrm{mm}$, and the 
+manufacturing process is said to have 'drifted' if the mean width of parts 
+differs significantly from $145\textrm{mm}$. You want to use the sampled
+measurements to test whether the process overall has drifted.     
+
+
+
+
+## Hypothesis Testing - Interpreting the results
+
+For the 3 business problems stated above, imagine we performed you got the 
+following p-values (with the given significance levels) write out your 
+interpretation of the results. 
+
+<br>
+
+**Question 1.**  
+
+**Coffee shop problem**. Significance level: 0.05, calculated $p$-value: 0.07
+
+<br>
+
+**Question 2.**  
+
+**Website company problem**. Significance level: 0.01, $p$-value: 0.006
+
+<br>
+
+**Question 3.**  
+
+**Manufacturing company problem**. Significance level: 0.05, $p$-value: 0.55
+
