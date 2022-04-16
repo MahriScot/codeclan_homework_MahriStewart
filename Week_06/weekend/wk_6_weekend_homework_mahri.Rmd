@@ -144,7 +144,7 @@ null_distribution_omni_herbi %>%
 # As p > 0.05 (p = 0.12) we can not reject the null hypothesis that omnivores
 # do not sleep for a significantly longer time than herbivores. 
 ```
-Visualise and p-value:
+Visualise:
 One tail so shading only on the right. Red line = observed stat
 ```{r}
 null_distribution_omni_herbi %>% 
@@ -242,6 +242,9 @@ p_value_domesticated
 
 
 
+
+
+
 <hr>
 
 ## Hypothesis testing - Defining the Hypothesis 
@@ -249,7 +252,7 @@ p_value_domesticated
 For the following three business problems write out:
 
 * What kind of test you would use  
-*  $H_0$ and $H_a$ in **both** mathematical notation and in words. 
+*  H0 and Ha in **both** mathematical notation and in words. 
 * Also state the method you would use to generate the null distribution 
 (bootstrap, permutation or simulation). 
 
@@ -257,27 +260,70 @@ For the following three business problems write out:
 
 **Question 1.**  
 You work for a independent coffee shop. The boss tells you that she thinks that 
-around $40\%$ of people in the town (population $30,000$) know of the coffee 
+around 40% of people in the town (population 30,000) know of the coffee 
 shop, but you are skeptical of the estimate. You conduct a random survey of 
-$200$ people in the town, asking if respondents are aware of your coffee shop. 
-You want to use the sample to test the hypothesis that $40\%$ or more of the 
-town's population have heard of the coffee shop. 
+200 people in the town, asking if respondents are aware of your coffee shop. 
+You want to use the sample to test the hypothesis that 40% or more of the 
+town's population have heard of the coffee shop.
 
-<br>
+
+*1. What kind of test to use*
+A one-tailed (right-sided)(proportions).
+We are looking to see if MORE than 40% of a sampled population have heard of the 
+shop.
+
+
+*2. H0 and H1 in mathematical notation and in words* 
+
+H0: Less than 40% of the town's population has heard of the coffee shop. 
+(I'm not sure how to write this as I don't know if I should have "less than" in 
+there??)
+
+$$H0 : π_{population\ heard\ of\ cafe} < 0.4$$
+
+
+H1: At least 40% of the town's population has heard of the coffee shop.
+$$H1 : π_{population\ heard\ of\ cafe} >=\ 0.4$$
+
+
+*3. Method to generate the null distribution (bootstrap, permutation, or simulation)*
+
+?Drawing
+
+null_distribution <- sample_data %>%
+  specify(response = have_they_heard, success = "yes") %>% 
+  hypothesize(null = "point", p = 0.4) %>%
+  generate(reps = 5000, type = "draw") %>%
+  calculate(stat = "prop") 
+
+
+
+
+I previously had: 
+Bootstrap:
+e.g.
+null_distribution<- sample_data %>% 
+  specify(response = have they heard of the cafe) %>% 
+  hypothesize(null = "point", mu = average of our survey respondents) %>% 
+  generate(reps = 5000, type = "bootstrap") %>% 
+  calculate(stat = "mean")
+
+
+
+
+
 
 **Question 2.**  
 You work for a website design company and have performed an **A/B test** on the 
 position of a banner on a website promoting a particular item. 
-<br><br>
-<div class='emphasis'>
+
 **A/B testing** 
 A method comparing two versions of a web page, email, flyer or other marketing 
 device against each other to determine which version performs better. As it is 
 essentially a controlled experiment, the design should try to ensure that the
 groups experiencing both versions of the marketing device are equivalent and 
 representative of the population.
-</div>
-<br><br>
+
 You selected five days at random last month and then randomly selected $200$ of
 each sampled day's users into group $A$ and another $200$ of that day's users 
 into group $B$. Group $A$ continued to be shown the banner at the right hand 
@@ -287,7 +333,41 @@ website, in particular the 'click through rate' (CTR) on the banner, i.e. what
 proportion of sampled users clicked on the banner. You want to use the sampled 
 data to test the hypothesis that website users overall are more likely to click 
 on the banner if positioned at the top of the page   
-<br>
+
+
+*1. What kind of test to use*
+Two-sample (independent samples), one-tailed test.
+
+
+
+*2. H0 and H1 in mathematical notation and in words* 
+
+H0: Website users are not more likely to click on the banner if it is at the top 
+of the page
+
+$$H0 : μ_{user\ interaction\ groupB} - μ_{user\ interaction\ groupA} <= 0$$
+
+H1: Website users overall are more likely to click on the banner if positioned 
+at the top of the page
+
+$$H1 : μ_{user\ interaction\ groupB} - μ_{user\ interaction\ groupA} > 0$$
+
+*3. Method to generate the null distribution (bootstrap, permutation, or simulation)*
+
+Permutation
+
+e.g.
+null_distribution <- sample_data %>% 
+  specify(interaction ~ banner_location) %>% 
+  hypothesize(null = "independence") %>% 
+  generate(reps = 5000, type = "permute") %>% 
+  calculate(stat = "diff in means", order = c("top", "right"))
+
+
+
+
+
+
 
 **Question 3.**  
 You work as an analyst for a car manufacturing company - they have specific 
@@ -300,6 +380,32 @@ specification of the part stipulates a width of $145\textrm{mm}$, and the
 manufacturing process is said to have 'drifted' if the mean width of parts 
 differs significantly from $145\textrm{mm}$. You want to use the sampled
 measurements to test whether the process overall has drifted.     
+
+
+*1. What kind of test to use*
+Two-tailed, one-sample mean test.
+
+*2. H0 and H1 in mathematical notation and in words* 
+
+H0: The mean width of sampled parts will not differ significantly from 145mm
+
+$$H0 : μ_{mean\ width} = 145 $$
+
+H1: The mean width of sampled parts has "drifted" significantly from 145mm
+
+$$ H1 : μ_{mean\ width} \neq 145$$
+
+
+*3. Method to generate the null distribution (bootstrap, permutation, or simulation)*
+
+Bootstrap:
+
+e.g. 
+null_distribution <- sample_data %>%
+  specify(response = mean_width) %>%
+  hypothesize(null = "point", mu = 145) %>%
+  generate(reps = 10000, type = "bootstrap") %>%
+  calculate(stat = "mean")
 
 
 
@@ -316,11 +422,21 @@ interpretation of the results.
 
 **Coffee shop problem**. Significance level: 0.05, calculated $p$-value: 0.07
 
+As p > 0.05 (p = 0.07), we fail to reject the null hypothesis (H0). 
+Though our p value is close to our significance level, we lack sufficient 
+statistical evidence to state that at least 40% of the population has heard of 
+the coffee shop.
+
 <br>
 
 **Question 2.**  
 
 **Website company problem**. Significance level: 0.01, $p$-value: 0.006
+
+As p < 0.01 (p = 0.006), we can reject the H0 in favour of the H1. 
+Here, the sample mean for group B was statistically significantly greater than 
+the mean of group A and so we can suggest that website users are more likely to 
+interact with the banner if it is at the top of the page rather than on the right.
 
 <br>
 
@@ -328,3 +444,6 @@ interpretation of the results.
 
 **Manufacturing company problem**. Significance level: 0.05, $p$-value: 0.55
 
+As p > 0.05 (p = 0.55) we fail to reject the H0 in favour of the H1. 
+Here, the mean width of sampled parts has "drifted" significantly from 145mm and 
+so are not up to the specified standards.

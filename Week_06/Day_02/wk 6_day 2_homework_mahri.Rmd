@@ -146,7 +146,6 @@ Here’s the code to filter and summarise the proportion of ratings within one s
 ```{r}
 samsung_stats <- samsung_only %>% 
   summarise(
-    mean = mean(rating), 
     sd = sd(rating)
   )
 
