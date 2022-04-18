@@ -453,3 +453,5 @@ interact with the banner if it is at the top of the page rather than on the righ
 As p > 0.05 (p = 0.55) we fail to reject the H0 in favour of the H1. 
 Here, the mean width of sampled parts has "drifted" significantly from 145mm and 
 so are not up to the specified standards.
+**oops - the other way around re: we do not have enough evidence to say they**
+**have drifted**
