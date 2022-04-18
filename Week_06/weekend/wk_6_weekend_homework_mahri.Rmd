@@ -28,7 +28,7 @@ library(infer)
 **Question 1.**  
 Explore the dataset and familiarise yourself with it.
 
-```{r}
+```{r} 
 data(msleep)
 glimpse(msleep)
 head(msleep, 10)
@@ -274,6 +274,8 @@ shop.
 
 
 *2. H0 and H1 in mathematical notation and in words* 
+**ACTUAL ANSWER FROM CLASS: NULL HYPOTHESIS IS ALWAYS EQUAL TO 0 so don't worry** 
+**about <0.4!it's ho = 0.4**
 
 H0: Less than 40% of the town's population has heard of the coffee shop. 
 (I'm not sure how to write this as I don't know if I should have "less than" in 
@@ -345,6 +347,7 @@ Two-sample (independent samples), one-tailed test.
 H0: Website users are not more likely to click on the banner if it is at the top 
 of the page
 
+**NOTE SHOULD BE π, not μ** 
 $$H0 : μ_{user\ interaction\ groupB} - μ_{user\ interaction\ groupA} <= 0$$
 
 H1: Website users overall are more likely to click on the banner if positioned 
@@ -389,6 +392,7 @@ Two-tailed, one-sample mean test.
 
 H0: The mean width of sampled parts will not differ significantly from 145mm
 
+**NOTE - DONT NEED the word "mean"!**
 $$H0 : μ_{mean\ width} = 145 $$
 
 H1: The mean width of sampled parts has "drifted" significantly from 145mm
