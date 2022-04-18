@@ -1,6 +1,8 @@
 ---
 title: "Week 6 - Weekend Homework - Mahri"
-output: html_notebook
+output:
+  html_document:
+    df_print: paged
 ---
 
 # Hypothesis tests & probability - homework
