@@ -1,0 +1,163 @@
+---
+title: "Simple Liner Regression Homework"
+output: html_notebook
+date: 09/05/2022
+---
+
+```{r}
+library(tidyverse)
+
+```
+### 1 MVP
+
+The file project_management.csv contains data sampled from the recent work 
+schedule of a small construction company. Column estimated_length contains the 
+estimated length of a building job in days, while column actual_length contains 
+the actual recorded length of the job in days.
+
+We are interested in determining the accuracy of the job estimations made by the 
+company using simple linear regression, so we will eventually want to run a simple 
+linear regression using actual_length as the dependent variable, and 
+estimated_length as the independent variable.
+
+<hr>
+
+**Load the data into a dataframe `project`:**
+
+```{r}
+project <- read_csv("data/project_management.csv")
+```
+
+**Plot the data, taking estimated_length as the independent variable and**
+**actual_length as the dependent variable.**
+
+```{r}
+
+project %>% 
+  ggplot()+
+  aes(x = actual_length, 
+      y = estimated_length)+
+  geom_point()+
+  labs(x = "Actual length of job (days)",
+       y = "Estimated length of job (days)")
+
+```
+<br>
+
+**Calculate the correlation coefficient of estimated_length and actual_length and**
+**interpret the value you obtain.**
+
+```{r}
+project %>% 
+  summarise(r = cor(actual_length, estimated_length))
+```
+A "very strong", positive, correlation can be seen between the actual job length 
+and the estimated job length (r = 0.80). This suggests that the estimations are 
+rather accurate though as can be seen in the plot above, an outlier (a job that 
+took a lot longer than the others) may be affecting this score and the real r 
+value may be lower than seen here. 
+
+
+<br>
+
+**Perform a simple linear regression using actual_length as the dependent**
+**variable, and estimated_length as the independent variable. Save the model**
+**object to a variable.**
+
+```{r}
+project_model <- lm(formula = estimated_length ~ actual_length, 
+                    data = project)
+project_model
+```
+
+**Interpret the regression coefficient of estimated_length (i.e. slope, gradient)**
+**you obtain from the model. How do you interpret the r2 value reported by the**
+**model?**
+
+(the fitted estimate length (yˆ) = y intercept + slope * actual length)
+
+The intercept on the y axis (where x = 0) is at is 4.59 estimated days. 
+
+The slope is 0.53. So, an increase in 1 *actual day* changes the *estimated length* 
+of the job by 0.53 days.  
+
+The function returns the best-fit coefficients (the values that lead to the 
+smallest sum of squared residuals (residuals = "how wrong we are")) so that we 
+can work out the line of best-fit. 
+(see below: r squared = 0.64(?) so 64% of the variation in the outcome (estimated days) can be explained by variation in the explanatory variable (actual days))
+<br>
+
+<br>
+
+**Is the relationship statistically significant? Remember, to assess this you need**
+**to check the p-value of the regression coefficient (or slope/gradient). But you**
+**should first check the regression diagnostic plots to see if the p-value will**
+**be reliable (don’t worry about any outlier points you see in the diagnostic**
+**plots, we’ll return to them in the extension).**
+
+```{r}
+library(modelr)
+
+project_model2 <- lm(formula = estimated_length ~ actual_length, 
+                    data = project)
+summary(project_model2)
+```
+```{r}
+library(ggfortify)
+autoplot(project_model)
+```
+
+**(forgetting the outlier...)**
+
+1. Residual vs fitted: 
+  This plot tests the independence of residuals. Residuals seem to be randomly 
+  scattered *close* to 0 so this plot is fine. 
+  
+  
+2. Normal Q-Q
+  This looks fine, certainly for lower values. It is testing the normality of 
+  the residuals so ideally you want the values to lie close to the line which 
+  means they are normally distributed. 
+  
+3. Scale-Location
+  Testing the constancy of variation of the residuals. We want the line to stay 
+  close to a constant or positive value. It looks good to me. (remember we're 
+  forgetting the outlier here)
+
+
+```{r}
+library(broom)
+tidy(project_model)
+```
+
+p is very close to 0 therefore highly statistically significant. 
+
+(relationship = For every actual day the job takes, the estimated length of job 
+increases by 0.52 days.) 
+
+
+
+
+
+**not started** 
+
+2 Extension - Residuals vs Leverage
+Read this material on the leverage of points in regression, and how to interpret the Residuals vs Leverage diagnostic plot produced by plotting the lm() model object. So far we’ve been using the autoplot() function to plot the model objects produced by lm(), but you can see the base R equivalent by doing something like plot(model) where model is an lm() object.
+
+
+Return to your plot from earlier, and now label the data points with their row number in the data frame using geom_text() [Hint - you can pass aes(label = 1:nrow(project)) to this layer to generate row index labels]
+Identify by eye any points you think might be outliers and note their labels.
+Further split your outliers into those you think are ‘influential’ or ‘non-influential’ based on a visual assessment of their leverage.
+
+
+Use your model object from earlier and confirm your visual assessment of which points are ‘influential’ or ‘non-influential’ outliers based on Cook’s distance. You can get a useful plot of Cook’s distance by passing argument which = 4 to autoplot(). Or try the base R plot() function for comparison [e.g. plot(model); you can also use par(mfrow = c(2,2)) just before the plot() command to get a nice two-by-two display]!
+
+
+Obtain the intercept and regression coefficient of variable estimated_length for a simple linear model fitted to data omitting one of your non-influential outlier points.
+How different are the intercept and coefficient from those obtained above by fitting the full data set? Does this support classifying the omitted point as non-influential?
+Plot the data points, this regression line and the regression line for the full data set. How different are the lines?
+
+
+Repeat the procedure above, but this time omitting one of your influential outliers.
+3 Additional resources
+There are various techniques to perform what is known as ‘robust regression’ on a dataset. Robust methods are less affected by the presence of outliers. See the rlm() function (‘robust linear model’) in the MASS package and this blog post.
