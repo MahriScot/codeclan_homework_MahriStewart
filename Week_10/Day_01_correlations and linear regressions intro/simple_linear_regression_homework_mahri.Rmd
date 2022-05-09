@@ -1,7 +1,9 @@
 ---
 title: "Simple Liner Regression Homework"
-output: html_notebook
-date: 09/05/2022
+output:
+  html_document:
+    df_print: paged
+date: "09/05/2022"
 ---
 
 ```{r}
