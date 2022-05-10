@@ -12,6 +12,9 @@ library(tidyverse)
 ```
 ### 1 MVP
 
+**NOTE - i need to do this again because I got my independent and dependent**
+**variables the wrong way round**
+
 The file project_management.csv contains data sampled from the recent work 
 schedule of a small construction company. Column estimated_length contains the 
 estimated length of a building job in days, while column actual_length contains 
@@ -33,6 +36,7 @@ project <- read_csv("data/project_management.csv")
 **Plot the data, taking estimated_length as the independent variable and**
 **actual_length as the dependent variable.**
 
+**ANSWERS - OOPS I GOt THESE THE WRONG WAY ROUND!!!**
 ```{r}
 
 project %>% 
@@ -49,6 +53,7 @@ project %>%
 **Calculate the correlation coefficient of estimated_length and actual_length and**
 **interpret the value you obtain.**
 
+**ANSWERS - OOPS I GOT THE BELOW THE WRONG WAY ROUND**
 ```{r}
 project %>% 
   summarise(r = cor(actual_length, estimated_length))
