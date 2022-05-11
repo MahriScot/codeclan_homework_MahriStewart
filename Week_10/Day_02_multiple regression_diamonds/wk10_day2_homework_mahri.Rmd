@@ -1,0 +1,180 @@
+---
+title: "Week 10 - Day 2 - Homework"
+output: html_notebook
+---
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = TRUE, fig.align = 'center')
+```
+
+<hr>
+
+
+### This is unfinished, I was mostly playing around to see what different code/
+models would do. I understand regressions etc but think I have some confusion 
+between models and the "long way" of doing things and have been trying to do all 
+at once. 
+
+
+
+```{r}
+library(tidyverse)
+library(ggplot2)
+library(GGally)
+library(mosaic)
+```
+
+# MVP
+
+<br>
+
+1. Load the `housing_prices.csv` data set and undertake an initial exploration 
+of the data. You will find details on the data set on the relevant [Kaggle page](https://www.kaggle.com/camnugent/california-housing-prices)
+
+```{r}
+housing_prices <- read_csv("data/housing_prices.csv")
+
+summary(housing_prices)
+# 200 NAs in total_bedrooms. ALl numeric apart from ocean_proximity (chr)
+```
+
+
+<br>
+
+2. We expect the `total_rooms` of houses to be strongly correlated with 
+`total_bedrooms`. Use `ggpairs()` to investigate correlations between these 
+two variables.
+
+```{r}
+housing_prices %>% 
+  select(total_rooms, total_bedrooms) %>% 
+  ggpairs()
+
+# very strong and positive correlation (r = 0.934). There is a cluster in the
+# lower values and plots lessen as both rooms and bedrooms increase
+```
+
+
+<br> 
+
+3. So, we do find significant correlations. Let's drop `total_bedrooms` from the 
+dataset, and use only `total_rooms` going forward.
+
+```{r}
+housing_prices <- housing_prices %>% 
+  select(-total_bedrooms)
+```
+
+
+<br>
+
+4. We are interested in developing a regression model for the `median_house_value` 
+of a house in terms of the possible predictor variables in the dataset. 
+
+  i. Use `ggpairs()` to investigate correlations between `median_house_value` 
+  and the predictors (this may take a while to run, don't worry, make coffee or 
+  something).
+  
+```{r}
+# predictors: housing_median_age (maybe income is better but I still
+# think it could be interesting), total_rooms, population, households (maybe take
+# out this or population, wait and see), median_income, ocean_proximity (is that
+# enough or is lat and long needed too - join these)
+
+housing_prices %>% 
+  ggpairs()
+
+housing_prices
+```
+
+
+  ii. Perform further `ggplot` visualisations of any significant correlations 
+  you find.
+
+```{r}
+# Population isn't significant but others are - is ocean_proximity?!
+# median income and total rooms have the strongest correlations, so does
+# latitude but i'd want to consider that joined to longitude
+
+median_value_interest <- housing_prices %>% 
+  select(- population)
+
+median_value_interest %>% 
+  ggplot()+
+  aes(x = median_house_value, 
+      y = median_income)+
+  geom_point() +
+  geom_smooth()
+
+median_value_interest %>% 
+  ggplot()+
+  aes(x = median_house_value, 
+      y = total_rooms)+
+  geom_point()+
+  geom_smooth()
+```
+
+
+<br>
+
+5. Shortly we may try a regression model to fit the categorical predictor 
+`ocean_proximity`. Investigate the level of `ocean_proximity` predictors. How 
+many dummy variables do you expect to get from it?
+    
+```{r}
+housing_prices %>% 
+  distinct(ocean_proximity)
+
+# 5 dummy variables 
+```
+
+
+<br>
+ 
+6. Start with simple linear regression. Regress `median_house_value` on 
+`median_income` and check the regression diagnostics.
+
+```{r}
+# dependent = house value as that is what is being studied
+model <- lm(formula = median_house_value ~ median_income, 
+            data = housing_prices)
+
+summary(model)
+# intercept = 45457, for every increase of 1 value in 
+
+library(modelr)
+library(ggfortify) # need for autoplot
+
+autoplot(model)
+
+```
+
+
+<br> 
+
+7. Add another predictor of your choice. Check your assumptions, diagnostics, 
+and interpret the model.
+
+```{r}
+model2 <- lm(formula = median_house_value ~ median_income + ocean_proximity, 
+            data = housing_prices)
+
+summary(model2)
+
+# <1hr from the ocean is our 
+# fewer inland houses than <1hr from ocean but more of others (especially island)
+```
+
+
+# Extension
+    
+<br>
+
+8. Try adding an interaction between `log(medium_income)` and your chosen categorical predictor. Do you think this interaction term is statistically justified?
+
+<br>
+
+9. Find and plot an appropriate visualisation to show the effect of this interaction
+
+
