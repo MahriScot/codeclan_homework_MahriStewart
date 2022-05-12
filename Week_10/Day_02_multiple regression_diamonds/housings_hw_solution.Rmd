@@ -1,0 +1,164 @@
+---
+title: "Homework - features and elements of multiple regression"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    number_sections: true
+    df_print: paged
+    css: ../../../styles.css
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+knitr::opts_chunk$set(echo = TRUE, fig.align = 'center')
+```
+
+<hr>
+
+# MVP
+
+<br>
+
+1. Load the `housing_prices.csv` data set and undertake an initial exploration of the data. You will find details on the data set on the relevant [Kaggle page](https://www.kaggle.com/camnugent/california-housing-prices)
+
+```{r, message = FALSE}
+house <- read_csv("data/housing_prices.csv")
+library(GGally)
+library(tidyverse)
+glimpse(house)
+```
+
+<br>
+
+2. We expect the `total_rooms` of houses to be strongly correlated with `total_bedrooms`. Use `ggpairs()` to investigate correlations between these two variables.
+
+```{r, message = FALSE, warnings = FALSE}
+ggpairs(house[,c("total_rooms", "total_bedrooms")])
+```
+
+<br> 
+
+3. So, we do find significant correlations. Let's drop `total_bedrooms` from the dataset, and use only `total_rooms` going forward.
+
+```{r}
+house_tidy <- house %>%
+  select(-total_bedrooms)
+
+house_tidy
+```
+
+<br>
+
+4. We are interested in developing a regression model for the `median_house_value` of a house in terms of the possible predictor variables in the dataset. 
+
+  i. Use `ggpairs()` to investigate correlations between `median_house_value` and the predictors (this may take a while to run, don't worry, make coffee or something).
+
+```{r, message = FALSE}
+ggpairs(house_tidy)
+```
+
+`median_income` is strongly correlated with `median_house_value`. This is followed by a positive correlation between `median_house_value` and `total_bedrooms` and a negative correlation between `median_house_value` and `latitude`.  Furthermore, The histograms of `median_house_value` split by `ocean_proxmity`also show some variation.
+
+  ii. Perform further `ggplot` visualisations of any significant correlations you find.
+
+```{r}
+house_tidy %>%
+  ggplot(aes(x = median_income, y = median_house_value)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+```{r}
+house_tidy %>%
+  ggplot(aes(x = total_rooms, y = median_house_value)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+house_tidy %>%
+  ggplot(aes(x = latitude, y = median_house_value)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+house_tidy %>%
+  ggplot(aes(x = ocean_proximity, y = median_house_value)) +
+  geom_boxplot()
+```
+
+<br>
+
+5. Shortly we may try a regression model to fit the categorical predictor `ocean_proximity`. Investigate the level of `ocean_proximity` predictors. How many dummy variables do you expect to get from it?
+    
+```{r}
+house_tidy %>% 
+  distinct(ocean_proximity)
+# expect 4 dummies for ocean_proximity
+```
+
+<br>
+ 
+6. Start with simple linear regression. Regress `median_house_value` on `median_income` and check the regression diagnostics.
+
+    
+```{r}
+mod1 <- lm(median_house_value ~ median_income, data = house_tidy)
+par(mfrow = c(2,2))
+plot(mod1)
+summary(mod1)
+# the residuals plots looks alright but there is some evidence to indicate skewness.
+```
+    
+<br> 
+
+7. Add another predictor of your choice. Check your assumptions, diagnostics, and interpret the model.
+
+```{r}
+
+mod2_proximity <- lm(median_house_value ~ median_income + ocean_proximity, data = house_tidy)
+summary(mod2_proximity)
+par(mfrow = c(2,2))
+plot(mod2_proximity)
+
+# The predictors median income and ocean_proximity explains 55% of the variation in our dataset. In addition, these predictors are also significant. For every increase in median income by 35,118, the median house price increases by 83,581.2 if all other predictors remain the same. If the house is on an island, the median house prices increases by 200,480.2 if all other predictors remain the same.
+
+```
+
+
+
+# Extension
+    
+<br>
+
+8. Try adding an interaction between `log(medium_income)` and your chosen categorical predictor. Do you think this interaction term is statistically justified?
+
+    
+```{r}
+mod3 <- lm(log(median_house_value) ~ log(median_income) + ocean_proximity + log(median_income):ocean_proximity, data = house_tidy)
+summary(mod3)
+
+# obtain only a small improvement in r^2 from the interaction. 
+# we'll see shortly that the correct test would be an anova() comparing both models
+anova(mod2_proximity, mod3)
+# the small p-value suggests interaction is statistically significant, but the effect is small.
+```
+
+<br>
+
+9. Find and plot an appropriate visualisation to show the effect of this interaction
+    
+```{r}
+house_tidy %>%
+  ggplot(aes(x = log(median_income),
+             y = log(median_house_value), 
+             colour = ocean_proximity)) +
+  geom_point(alpha = 0.1) +
+  geom_smooth(method = "lm", se = FALSE) +
+  facet_wrap(~ ocean_proximity)
+
+# not much evidence that the gradient of the line varies significantly with ocean_proximity. Island so a change in the gradient however, there is not enough data points to make any conclusions.
+```
+
