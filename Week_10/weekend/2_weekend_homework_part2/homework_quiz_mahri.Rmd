@@ -1,0 +1,81 @@
+---
+title: "Homework Quiz - Mahri"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    number_sections: true
+    df_print: paged
+    css: ../../../styles.css
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+<br><br>
+
+1. I want to predict how well 6 year-olds are going to do in their final school exams. Using the following variables am I likely under-fitting, fitting well or over-fitting? Postcode, gender, reading level, score in maths test, date of birth, family income.
+
+Over-fitting. Postcode, gender, date of birth, and family income shouldn't matter. 
+
+<hr>
+
+2. If I have two models, one with an AIC score of 34,902 and the other with an AIC score of 33,559 which model should I use?
+
+The lower (AIC = 33,559)
+
+<hr>
+
+3. I have two models, the first with: r-squared: 0.44, adjusted r-squared: 0.43. The second with: r-squared: 0.47, adjusted r-squared: 0.41. Which one should I use?
+
+You want to choose the model where both values are higher. A lower adjusted 
+r squared suggests that the additional input variables are not adding value to 
+the model so I would choose the first model. 
+
+<hr>
+
+4. I have a model with the following errors: RMSE error on test set: 10.3, RMSE error on training data: 10.4. Do you think this model is over-fitting?
+
+(Root Mean Square Error (RMSE) measures the error of a model in predicting 
+quantitative data.)
+The test error should be higher than the training error because of noise so this
+is over-fitting. 
+
+<hr>
+
+5. How does k-fold validation work?
+
+The data is split into equal, randomly selected, sections. Each section is used
+as the training data and tested upon the other sections. So, if you have split
+the data 5 times you will train the 5 different subsets of the data and test each
+one on the other 4 (5 tests in total). Once you have done this, you can average 
+the error across all the test folds for an accurate measure of model performance. 
+
+<hr>
+
+6. What is a validation set? When do you need one?
+
+You use these when you are finished selecting your model. As you might overfit to
+the test, a validation set should give you a final estimate of the expected 
+performance of the model.
+
+<hr>
+
+7. Describe how backwards selection works.
+
+Your model starts with all the possible predictors and you remove them one
+by one until you have an optimal model. At each step you would remove the 
+predictor that lowers r^2 the least when it is removed. It will only work if you 
+have at least as many data points in your sample as there are predictors.
+
+<hr>
+
+8. Describe how best subset selection works.
+
+This is an exhaustive search to discover the best model. All possible combinations
+of predictors are analysed for the best model (ie. highest r squared).
+
+
+
