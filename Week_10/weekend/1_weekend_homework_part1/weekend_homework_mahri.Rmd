@@ -59,9 +59,8 @@ glimpse(avocado_data)
 
 
 
-
-Get month, or season(?) out of the date column (there is also a year column, 
-might be good to compare month according to year at some point):
+Get month, or season(?) out of the date column - aware that
+it is "quarter" (jan feb march)and not really "season":
 ```{r}
 avocado_data <- avocado_data %>% 
   mutate(month = month(date, label = TRUE, abbr = FALSE),
@@ -76,13 +75,14 @@ avocado_data %>%
   distinct(region)
 ```
 
-Make non numerics into a factor. type (just conventional or organic) region (54
-regions...) (new cols: month is ordinal, season is integer - does that mean they 
-are ok?):
+"Make categoricals into a factor". type (conventional or organic) region (54
+regions...) 
+(new cols: month is ordinal and season is integer - does that mean they are ok?):
 ```{r}
 avocado_data <- avocado_data %>% 
   mutate(type = as_factor(type),
-         region = as_factor(region))
+         region = as_factor(region),
+         month = as_factor(month))
 ```
 
 
@@ -119,8 +119,9 @@ avocado_data_trimmed %>%
   geom_boxplot()
 ```
 
-I think, seeing as I would not know how to bin the regions and as all (but 1?) 
-median average prices are between 1 and 2 dollars, I will omit them for now. 
+I think, seeing as I would not know how to bin the regions (do I need to?!) 
+and as all (but 1?) median average prices are between 1 and 2 dollars, I will 
+omit them for now. 
 Maybe come back to this...
 
 
@@ -156,7 +157,7 @@ avo_data_trim_no_region %>%
             )
 ```
 
-I WILL CONSIDER (in order of highest correlation): 
+I will consider (in order of highest correlation): 
 
 1. `x4046` = -0.208
 2. `total_volume` = -0.193
@@ -210,7 +211,7 @@ Residuals vs Leverage:
 summary(model1b)
 ```
 
-Again, though significnat, even less of the variance is explained (3.7%)
+Again, though significant, even less of the variance is explained (3.7%)
 
 
 #### Model 1c. season
@@ -230,8 +231,24 @@ Residuals vs Leverage:
 ```{r}
 summary(model1c)
 ```
-Significant, but only 2.9% of the variance is explained by season. 
+Significant, but only 2.9% of the variance is explained by season... shouldn't 
+I be able to see the different "seasons"!? Let's change that (year 
+as well?)!
 
+```{r}
+avo_data_trim_no_region <-  avo_data_trim_no_region %>% 
+  mutate(season = as_factor(season), 
+         year = as_factor(year))
+
+model1c <- lm(average_price ~ season, data = avo_data_trim_no_region)
+
+autoplot(model1c)
+
+summary(model1c)
+```
+ok, now i can see them all but there is not much difference between them (e.g. 
+only an increase in 0.07 on the average price in quarter("season")2 and 0.21 in 
+season 3). The residuals are quite the same. 
 
 #### Model 1d. type
 
@@ -243,7 +260,7 @@ autoplot(model1d)
 
 * Residuals vs fitted: straight line at 0 is probably exactly what we want as the
  plots will be randomly scattered on either side. 
-* Normal Q-Q: higher values stray from the line but otherwise looking quite good.
+* Normal Q-Q: higher values stray from the line but otherwise looking OK.
 * Scale-Location: 
 * Residuals vs Leverage:
 
@@ -267,12 +284,14 @@ avo_residuals <- avo_data_trim_no_region %>%
 avo_residuals %>% 
   ggpairs()
 ```
-can't see so well again but:
+can't see so well again but :
+(season and year figures were from when I didn't realise they were not factors, 
+so I will go ahead with them)
 
-* `season` = 0.219
+* `season` = 0.219 
 * `year` = 0.118
 * `x4046` = 0.88
-* `total_volume` = 0.063
+* `large_bags` = 0.069
 
 #### Model 2a. season
 
@@ -282,9 +301,14 @@ model2a <- lm(average_price ~ type + season, data = avo_data_trim_no_region)
 
 autoplot(model2a)
 ```
+Normal Q-Q is straying from the line with higher values but otherwise I think 
+it looks good. Maybe a little heteroskedacity in the scale-location (?)
 ```{r}
 summary(model2a)
 ```
+With all levels significant, 42% of the variance is explained by type and season. 
+Though there is still not much of a difference in average price between seasons.
+
 
 
 #### Model 2b. year
@@ -298,6 +322,13 @@ autoplot(model2b)
 ```{r}
 summary(model2b)
 ```
+In 2016 and 2018, the average price was less than it was in 2015 (intercept) but 
+it was higher in 2017 (where type is constant(?)). 
+These are very small (but significant) value changes though. 
+
+This model accounts for 41% of the variance, with a very similar residual 
+standard error (0.308) as that of model2a (season) (0.307).
+
 
 #### Model 2c. x4046
 ```{r}
@@ -306,37 +337,338 @@ model2c <- lm(average_price ~ type + x4046, data = avo_data_trim_no_region)
 autoplot(model2c)
 ```
 
+I am honestly not sure how to interpret this ^ 
 ```{r}
 summary(model2c)
 ```
 
-#### Model 2d. total_volume 
+A smaller multiple r-squared value (38% of variance explained), smaller 
+adjusted r squared (0.38), and larger residual standard error lead me to prefer 
+the above two models. 
+
+
+
+#### Model 2d. large_bags 
 ```{r}
-model2d <- lm(average_price ~ type + total_volume, data = avo_data_trim_no_region)
+model2d <- lm(average_price ~ type + large_bags, data = avo_data_trim_no_region)
 
 autoplot(model2d)
 ```
+
 ```{r}
 summary(model2d)
 ```
+As with x4046, a smaller multiple r-squared and adjusted r-squared and a larger
+residual standard error lead me to prefering the other two models. 
 
 
-Residuals vs fitted: 
-Normal Q-Q:
-Scale-Location: 
-Residuals vs Leverage:
+**From Model 2** model2a ("type + season") will go ahead. 
 
-Residuals vs fitted: 
-Normal Q-Q:
-Scale-Location: 
-Residuals vs Leverage:
 
-Residuals vs fitted: 
-Normal Q-Q:
-Scale-Location: 
-Residuals vs Leverage:
+### Model 3 consideration 
 
-Residuals vs fitted: 
-Normal Q-Q:
-Scale-Location: 
-Residuals vs Leverage:
+Going ahead with model2a (type + season). 
+
+Running ggpairs with the residuals:
+
+```{r}
+avo_residuals_2 <- avo_data_trim_no_region %>% 
+  add_residuals(model2a) %>% 
+  select(-c(average_price, type, season))
+
+avo_residuals_2 %>% 
+  ggpairs()
+```
+
+As `year` was very close in the last group of models, I want to look into that 
+again. But also: 
+
+`x4046` = -0.085
+`large_bag` = -0.064
+`total_volume` = -0.060
+
+#### Model 3a. type + season + year
+
+```{r}
+model3a <- lm(average_price ~ type + season + year, 
+              data = avo_data_trim_no_region)
+
+autoplot(model3a)
+```
+```{r}
+summary(model3a)
+```
+Everything is significant, 45% of variance is explained by this model and we 
+have a lower residual standard error than we did with just type + season. So 
+that is good news. 
+
+#### model 3b, type + season + x4046
+```{r}
+model3b <- lm(average_price ~ type + season + x4046, 
+              data = avo_data_trim_no_region)
+
+autoplot(model3b)
+```
+
+```{r}
+summary(model3b)
+```
+Smaller multiple r squared and adjusted r squared, plus a larger residual 
+standard error means that model 3a was better. 
+
+
+
+#### Model 3c. type + season + large_bags
+
+```{r}
+model3c <- lm(average_price ~ type + season + large_bags, 
+              data = avo_data_trim_no_region)
+
+autoplot(model3c)
+```
+
+```{r}
+summary(model3c)
+```
+
+Similar residual standard error to model3a but lower r-squared values. 
+
+
+#### Model 3d. type + season + total_volume
+
+```{r}
+model3d <- lm(average_price ~ type + season + total_volume, 
+              data = avo_data_trim_no_region)
+
+autoplot(model3d)
+```
+
+```{r}
+summary(model3d)
+```
+still not quite as good as 3a but it's pretty close. 
+
+
+**average_price ~ type + season + year**
+Model 3a will be chosen as it has the highest multiple r-squared (0.45) and 
+adjusted r-squared (0.42)values as well as the lowest residual se (0.298).
+
+
+### Model 4 consideration 
+
+Running ggpairs with the residuals:
+
+```{r}
+avo_residuals_3 <- avo_data_trim_no_region %>% 
+  add_residuals(model3a) %>% 
+  select(-c(average_price, type, season, year))
+
+avo_residuals_3 %>% 
+  ggpairs()
+```
+
+
+`x4046` = -0.089
+`large_bags` = -0.077
+`total_volume` = 0.063
+
+#### Model 4a. type, season, year, x4044
+
+```{r}
+model4a <- lm(average_price ~ type + season + year + x4046, 
+              data = avo_data_trim_no_region)
+
+autoplot(model4a)
+```
+Looking better but still heteroskedastic in scale-location
+```{r}
+summary(model4a)
+```
+
+All significant. Lower than other residual standard errors = 0.297. 45.8% of 
+variance accounted for by this model and the adjusted r-sqaured is looking good 
+too. 
+
+
+
+#### Model 4b. type, season, year, large_bags
+
+```{r}
+model4b <- lm(average_price ~ type + season + year + large_bags, 
+              data = avo_data_trim_no_region)
+
+autoplot(model4b)
+```
+
+```{r}
+summary(model4b)
+```
+45.7% variance (model 4a is 45.8), smaller adjusted r-squared than model 4a (only 
+by 0.0012), and same residual standard error. 
+
+#### Model 4c. type, season, year, total_volume
+
+```{r}
+model4c <- lm(average_price ~ type + season + year + total_volume, 
+              data = avo_data_trim_no_region)
+
+autoplot(model4c)
+```
+
+```{r}
+summary(model4c)
+```
+The lowest, but only just, variance accounted for at 45.6% (model4a = 45.8% and 
+model 4b = 45.7%) but has the same adjusted r-squared (0.46) so they are all very 
+similar. Residual standard error (0.297) is also the same as the other two models.
+
+
+I guess you go with `model4a` as it has the highest multiple r-squared (by 0.1%)
+**average price ~ type, season, year, x4046**
+
+
+
+
+
+
+**One more? There hasn't been much of a change since model 3a so maybe I should**
+**have stopped there?**
+
+### Model 5 consideration
+
+Running ggpairs with the residuals:
+
+```{r}
+avo_residuals_4 <- avo_data_trim_no_region %>% 
+  add_residuals(model3a) %>% 
+  select(-c(average_price, type, season, year, x4046))
+
+avo_residuals_4 %>% 
+  ggpairs()
+```
+`large_bags` and `total_volume`
+
+#### model 5a. type, season, year, x4044, large_bags
+
+```{r}
+model5a <- lm(average_price ~ type + season + year + x4046 + large_bags, 
+              data = avo_data_trim_no_region)
+
+autoplot(model5a)
+```
+
+
+```{r}
+summary(model5a)
+```
+Large bags is not significant. Try an ANOVA:
+
+```{r}
+anova(model4a, model5a)
+```
+
+Large_bags is not significant p = 0.47 (we want it to be < 0.05) 
+
+
+
+#### model 5b. type, season, year, x4044, total_volume
+
+```{r}
+model5b <- lm(average_price ~ type + season + year + x4046 + total_volume, 
+              data = avo_data_trim_no_region)
+
+autoplot(model5b)
+```
+
+
+```{r}
+summary(model5b)
+```
+
+Ah, a change in r-squared, now 47% of the variance is accounted for by this
+model (5b = average_price ~ type + season + year + x4046 + total_volume) with 
+a residual standar error similar to what we have seen in other models (0.29).
+
+So I think we will stop with **model5b:** 
+**average_price ~ type + season + year + x4046 + total_volume**
+
+
+### Interactions? 
+
+```{r}
+average_price_residuals <- avo_data_trim_no_region %>% 
+  add_residuals(model5b) %>% 
+  select(-average_price)
+```
+
+
+```{r}
+coplot(resid ~ type | season, 
+       panel = function(x, y, ...){
+         points(x, y)
+         abline(lm(y ~ x), col = "blue")},
+       data = average_price_residuals, 
+       columns = 4)
+```
+^ not really any interaction
+
+
+```{r}
+coplot(resid ~ type | year, 
+       panel = function(x, y, ...){
+         points(x, y)
+         abline(lm(y ~ x), col = "blue")},
+       data = average_price_residuals, 
+       columns = 4)
+```
+^ small interaction 
+
+```{r}
+coplot(resid ~ type | x4046, 
+       panel = function(x, y, ...){
+         points(x, y)
+         abline(lm(y ~ x), col = "blue")},
+       data = average_price_residuals, 
+       columns = 4)
+```
+^ nope
+
+```{r}
+coplot(resid ~ type | total_volume, 
+       panel = function(x, y, ...){
+         points(x, y)
+         abline(lm(y ~ x), col = "blue")},
+       data = average_price_residuals, 
+       columns = 6)
+```
+
+
+
+```{r}
+coplot(resid ~ year | season, 
+       panel = function(x, y, ...){
+         points(x, y)
+         abline(lm(y ~ x), col = "blue")},
+       data = average_price_residuals, 
+       columns = 4)
+```
+^ this is interesting
+
+mod4a <- lm(prestige ~ education + income + type + education:income, data = prestige_trim)
+summary(mod4a)
+```{r}
+model_interaction <- lm(average_price ~ season + year + x4046 + total_volume +
+                          season:year, data = avo_data_trim_no_region)
+
+autoplot(model_interaction)
+summary(model_interaction)
+```
+
+Lots of insignificants and very heteroskedastic plots!
+```{r}
+anova(model5b, model_interaction)
+```
+
+
+I would choose to go stick with **model5b:** 
+**average_price ~ type + season + year + x4046 + total_volume**
