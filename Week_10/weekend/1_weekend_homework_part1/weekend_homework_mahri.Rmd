@@ -1,0 +1,342 @@
+---
+title: "Weekend Homework - Model Building"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    number_sections: true
+    df_print: paged
+    css: ../../../styles.css
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.align = 'center')
+```
+
+# MVP
+
+We've looked at a few different ways in which we can build models this week, including how to prepare them properly. This weekend we'll build a multiple linear regression model on a dataset which will need some preparation. The data can be found in the data folder, along with a data dictionary
+
+We want to investigate the avocado dataset, and, in particular, to model the `AveragePrice` of the avocados. Use the tools we've worked with this week in order to prepare your dataset and find appropriate predictors. Once you've built your model use the validation techniques discussed on Wednesday to evaluate it. Feel free to focus either on building an *explanatory* or a *predictive* model, or both if you are feeling energetic!
+
+As part of the MVP we want you not to just run the code but also have a go at **interpreting the results** and write your thinking in comments in your script.
+
+**Hints and tips**
+
+* `region` may lead to many dummy variables. Think carefully about whether to include this variable or not (there is no one 'right' answer to this!)
+* Think about whether each variable is *categorical* or *numerical*. If categorical, make sure that the variable is represented as a factor.
+* We will not treat this data as a time series, so `Date` will not be needed in your models, but can you extract any useful features out of `Date` before you discard it?
+* If you want to build a predictive model, consider using either `leaps` or `glmulti` to help with this.
+
+
+```{r}
+library(tidyverse)
+library(janitor)
+library(ggplot2)
+library(GGally)
+library(modelr)
+library(lubridate)
+library(ggfortify)
+```
+
+```{r}
+avocado_data <- read_csv("data/avocado.csv")
+data_dictionary <- read_csv("data/data_dict.txt")
+```
+
+CLEAN NAMES
+```{r}
+avocado_data <- avocado_data %>% 
+  janitor::clean_names()
+```
+
+LOOK FOR NAs (none) and non numeric variables (date, region, and type)
+```{r}
+summary(avocado_data)
+glimpse(avocado_data)
+```
+
+
+
+
+Get month, or season(?) out of the date column (there is also a year column, 
+might be good to compare month according to year at some point):
+```{r}
+avocado_data <- avocado_data %>% 
+  mutate(month = month(date, label = TRUE, abbr = FALSE),
+         season = quarter(date))
+```
+
+
+Will I have too many regions to consider? (there are 54 - and I have no idea where
+most of these places are in relation to each other - **REMEMBER THIS**)
+```{r}
+avocado_data %>% 
+  distinct(region)
+```
+
+Make non numerics into a factor. type (just conventional or organic) region (54
+regions...) (new cols: month is ordinal, season is integer - does that mean they 
+are ok?):
+```{r}
+avocado_data <- avocado_data %>% 
+  mutate(type = as_factor(type),
+         region = as_factor(region))
+```
+
+
+What can I get rid of?
+
+`date`, and do I need the index (`x1`)? `total_bags` can come from the other bag 
+sizes added (actually, wait to check alias for this...?)
+
+```{r}
+avocado_data_trimmed <- avocado_data %>% 
+  select(-c(date, x1))
+```
+
+Check alias to see if anything else can go: 
+```{r}
+alias(average_price ~ ., data = avocado_data_trimmed)
+```
+
+Maybe get rid of `month`? It's probably too much too consider anyway. 
+`total_bags` isn't an alias consideration as I thought...
+```{r}
+avocado_data_trimmed <- avocado_data_trimmed %>% 
+  select(-month)
+
+alias(average_price ~ ., data = avocado_data_trimmed)
+```
+
+So, back to region...: 
+```{r}
+avocado_data_trimmed %>% 
+  ggplot()+
+  aes(x = region,
+      y = average_price)+
+  geom_boxplot()
+```
+
+I think, seeing as I would not know how to bin the regions and as all (but 1?) 
+median average prices are between 1 and 2 dollars, I will omit them for now. 
+Maybe come back to this...
+
+
+<hr>
+
+### Model 1 consideration
+
+```{r}
+avo_data_trim_no_region <- avocado_data_trimmed %>% 
+  select(-region)
+
+avo_data_trim_no_region %>% 
+  ggpairs()
+```
+oh... I can't see this. 
+
+Everything with `average_price` looks to have at least 2 stars (ie. significant) 
+I can't find a way to see this any bigger so...
+
+```{r}
+avo_data_trim_no_region %>% 
+  summarise(cor(average_price, total_volume),
+            cor(average_price, x4046),
+            cor(average_price, x4225),
+            cor(average_price, x4770),
+            cor(average_price, total_bags),
+            cor(average_price, small_bags),
+            cor(average_price, large_bags),
+            cor(average_price, x_large_bags),
+           # cor(average_price, type),    type is not numeric
+            cor(average_price, year),
+            cor(average_price, season)
+            )
+```
+
+I WILL CONSIDER (in order of highest correlation): 
+
+1. `x4046` = -0.208
+2. `total_volume` = -0.193
+3. then lots of -0.17's so I will look at `season` (0.172) (`total_bags` (-0.177)
+  has a higher sig but I'm already looking at total_volume)
+4. and `type` as the overlap looks interesting
+
+
+#### Model 1a. x4046 
+
+Check diagnostics: 
+
+```{r}
+model1a <- lm(average_price ~ x4046, data = avo_data_trim_no_region)
+
+autoplot(model1a) 
+```
+
+^ I do not like this 
+
+* Residuals vs fitted: the line is mostly between 1 and -1 however the plots are
+not randomly scattered around 0.
+* Normal Q-Q: OK in the middle but strays from the line at the bototm and top.
+Scale-Location: heteroscedastic (bad).
+Residuals vs Leverage: 
+
+```{r}
+summary(model1a)
+```
+
+^ Though significant, when looking at Multiple R-squared, only 4% of the variance 
+in average price is explained by variable x4046. 
+
+#### Model 1b. total volume
+
+Check diagnostics:
+```{r}
+model1b <- lm(average_price ~ total_volume, data = avo_data_trim_no_region)
+
+autoplot(model1b)
+```
+Very similar to diagnostics for x4046
+
+* Residuals vs fitted: the line is slightly better, between 1 and -1 however 
+the plots are not randomly scattered around 0.
+* Normal Q-Q: OK in the middle but strays from the line at the bototm and top.
+Scale-Location: heteroscedastic (bad).
+Residuals vs Leverage: 
+
+```{r}
+summary(model1b)
+```
+
+Again, though significnat, even less of the variance is explained (3.7%)
+
+
+#### Model 1c. season
+
+Check diagnostics 
+```{r}
+model1c <- lm(average_price ~ season, data = avo_data_trim_no_region)
+
+autoplot(model1c)
+```
+
+* Residuals vs fitted: relatively straight line around 0 is a positive result
+* Normal Q-Q: deviation from the line at the bottom and top 
+Scale-Location: 
+Residuals vs Leverage:
+
+```{r}
+summary(model1c)
+```
+Significant, but only 2.9% of the variance is explained by season. 
+
+
+#### Model 1d. type
+
+```{r}
+model1d <- lm(average_price ~ type, data = avo_data_trim_no_region)
+
+autoplot(model1d)
+```
+
+* Residuals vs fitted: straight line at 0 is probably exactly what we want as the
+ plots will be randomly scattered on either side. 
+* Normal Q-Q: higher values stray from the line but otherwise looking quite good.
+* Scale-Location: 
+* Residuals vs Leverage:
+
+```{r}
+summary(model1d)
+```
+Organic or conventional is significant and accounts for 38% of the variance in 
+average price. This is by far the best so far (the others lay around 3 or 4%)
+and so we will go ahead with model 1d.
+
+
+### Model 2 consideration 
+
+Going ahead with model1d (type). Running ggpairs with the residuals:
+
+```{r}
+avo_residuals <- avo_data_trim_no_region %>% 
+  add_residuals(model1d) %>% 
+  select(-c(average_price, type))
+
+avo_residuals %>% 
+  ggpairs()
+```
+can't see so well again but:
+
+* `season` = 0.219
+* `year` = 0.118
+* `x4046` = 0.88
+* `total_volume` = 0.063
+
+#### Model 2a. season
+
+Residuals:
+```{r}
+model2a <- lm(average_price ~ type + season, data = avo_data_trim_no_region)
+
+autoplot(model2a)
+```
+```{r}
+summary(model2a)
+```
+
+
+#### Model 2b. year
+
+```{r}
+model2b <- lm(average_price ~ type + year, data = avo_data_trim_no_region)
+
+autoplot(model2b)
+```
+
+```{r}
+summary(model2b)
+```
+
+#### Model 2c. x4046
+```{r}
+model2c <- lm(average_price ~ type + x4046, data = avo_data_trim_no_region)
+
+autoplot(model2c)
+```
+
+```{r}
+summary(model2c)
+```
+
+#### Model 2d. total_volume 
+```{r}
+model2d <- lm(average_price ~ type + total_volume, data = avo_data_trim_no_region)
+
+autoplot(model2d)
+```
+```{r}
+summary(model2d)
+```
+
+
+Residuals vs fitted: 
+Normal Q-Q:
+Scale-Location: 
+Residuals vs Leverage:
+
+Residuals vs fitted: 
+Normal Q-Q:
+Scale-Location: 
+Residuals vs Leverage:
+
+Residuals vs fitted: 
+Normal Q-Q:
+Scale-Location: 
+Residuals vs Leverage:
+
+Residuals vs fitted: 
+Normal Q-Q:
+Scale-Location: 
+Residuals vs Leverage:
