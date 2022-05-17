@@ -1,0 +1,445 @@
+---
+title: "Decision trees homework"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    number_sections: true
+    df_print: paged
+    css: ../../../styles.css
+  pdf_document: default
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.align = "center")
+```
+
+
+<br>
+In this homework we will create a decision tree to see which factors are useful 
+in predicting whether or not a passenger on the titanic will survive.  
+
+
+Run the code below before you begin: 
+
+
+```{r, warning = FALSE, message = FALSE}
+library(rpart)
+library(rpart.plot)
+library(tidyverse)
+library(GGally)
+
+library(tidyverse)
+titanic_set <- read_csv('data/titanic_decision_tree_data.csv')
+
+
+shuffle_index <- sample(1:nrow(titanic_set))
+
+# shuffle the data so class order isn't in order - need this for training/testing split later on 
+titanic_set <- titanic_set[shuffle_index, ]
+```
+
+<br>
+
+**Data Dictionary**
+
+  * **sex**: Biological Sex, male or female  
+  * **age_status**: adult or child (child defined as under 16)  
+  * **class** : Ticket class, 1 = 1st (Upper class), 2 = 2nd (Middle Class), 3 = 3rd (Lower Class)    
+  * **port_embarkation**: C = Cherbourg, Q = Queenstown, S = Southampton  
+  * **sibsp** : number of siblings / spouses aboard the Titanic   
+  * **parch**: number of parents / children aboard the Titanic. Some children travelled only with a nanny, therefore parch=0 for them. 
+  * **survived_flag** : did they survive, 0 = No, 1 = Yes  
+
+
+
+
+
+
+
+
+
+# MVP 
+
+
+## Question 1  
+
+<br> 
+Cleaning up the data is always the first step. Do the following: 
+
+  * Take only observations which have a `survived` flag (i.e. that aren't missing)  
+  * Turn your important variables into factors (sex, survived, pclass, embarkation)  
+  * Create an `age_status` variable which groups individuals under (and including) 16 years of age into a category called "child" category and those over 16 into a category called "adult".  
+  * Drop the NA  
+  * Drop any variables you don't need (`X1`, `passenger_id`, `name`, `ticket`, `far`, `cabin`)  
+
+If you need help doing this, the code is below, but please try it yourself first so you can learn!
+
+
+```{r}
+titanic_tidy <- titanic_set %>% 
+  filter(!is.na(survived)) %>% 
+  mutate(sex = as_factor(sex),
+         survived = factor(survived, levels = c(0,1), 
+                           labels = c("No", "Yes")),
+         class = factor(pclass, levels = c(3,2,1), 
+                        labels = c("Lower", "Middle", "Upper")),
+         embarked = as_factor(embarked),
+         age_status = as_factor(if_else(age <= 16, 
+                                        "child", "adult"))) %>% 
+  select(-c("...1", "passenger_id", "name", "ticket", 
+            "fare", "cabin", "age", "pclass")) %>% 
+  na.omit()  
+titanic_tidy
+
+# levels and labels were in the answers - I hadn't added them:
+# class = factor(pclass, levels = c(3,2,1), labels = c("Lower", "Middle", "Upper")), 
+# survived_flag = factor(survived, levels = c(0,1), labels = c("No", "Yes")), 
+```
+
+
+<br>
+<details>
+<summary>**Data Cleaning Code** </summary>
+<br>
+
+```{r}
+titanic_clean <- titanic_set %>%
+  filter(survived %in% c(0,1)) %>%
+# Convert to factor level
+	mutate(sex = as.factor(sex), 
+	       age_status = as.factor(if_else(age <= 16, "child", "adult")),
+         class = factor(pclass, levels = c(3,2,1), labels = c("Lower", "Middle", "Upper")), 
+	       survived_flag = factor(survived, levels = c(0,1), labels = c("No", "Yes")), 
+	       port_embarkation = as.factor(embarked)) %>%
+  select(sex, age_status, class, port_embarkation, sib_sp, parch, survived_flag) %>%
+  na.omit()
+```
+</details>
+
+
+<br>
+
+
+
+
+
+
+
+
+## Question 2  
+
+<br> 
+Have a look at your data and create some plots to ensure you know what you're working with before you begin. Write a summary of what you have found in your plots. Which variables do you think might be useful to predict whether or not people are going to die? Knowing this before you start is the best way to have a sanity check that your model is doing a good job.  
+
+```{r}
+titanic_tidy %>% 
+  ggpairs()
+```
+^ class, sex, parents/children (maybe), and maybe age status look interesting
+
+
+```{r}
+survived_model_all <- glm(survived ~ .,
+                   data = titanic_tidy, 
+                   family = binomial(link = 'logit'))
+
+summary(survived_model_all)
+```
+
+^ again, class, sex, and age status seem important - they're significant for survival. 
+parents/children isn't significant but sibling/spouse is 
+
+```{r}
+titanic_tidy %>% 
+  ggplot()+
+  aes(x = class, 
+      fill = survived) + 
+  geom_bar()
+
+titanic_tidy %>% 
+  ggplot()+
+  aes(x = sex, 
+      fill = survived) + 
+  geom_bar()
+
+titanic_tidy %>% 
+  ggplot()+
+  aes(x = age_status, 
+      fill = survived) + 
+  geom_bar()
+
+titanic_tidy %>% 
+  ggplot()+
+  aes(x = parch, 
+      fill = survived) + 
+  geom_bar()
+
+titanic_tidy %>% 
+  ggplot()+
+  aes(x = sib_sp, 
+      fill = survived) + 
+  geom_bar()
+
+```
+
+I would conclude that it would make sense to consider an individuals survival 
+based on their class, sex, and maybe their age status. Possibly looking at their
+sex AND class as well as we know that women and children were prioritised. 
+Whether they had a parent/child with them and whether they had a sibling/spouse
+with them might give interesting results but it seems much less likely.
+
+<br>
+
+
+
+
+
+
+
+
+
+## Question 3  
+
+<br> 
+Now you can start to build your model. Create your testing and training set using an appropriate split. Check you have balanced sets. Write down why you chose the split you did and produce output tables to show whether or not it is balanced. [**Extra** - if you want to force balanced testing and training sets, have a look at the `stratified()` function in package `splitstackshape` (you can specify multiple variables to stratify on by passing a vector of variable names to the `group` argument, and get back testing and training sets with argument `bothSets = TRUE`)]
+
+```{r}
+n_data <- nrow(titanic_tidy)
+
+test_index <- sample(1:n_data, 
+                     size = n_data * .2) # testing 20% 
+
+titanic_test <- slice(titanic_tidy, 
+                      test_index)
+
+titanic_train <- slice(titanic_tidy, 
+                       -test_index)
+```
+
+
+```{r}
+titanic_test %>% 
+  janitor::tabyl(survived)
+```
+
+```{r}
+titanic_train %>% 
+  janitor::tabyl(survived)
+```
+^ the percentages of survived/ didn't survive are almost equal. 
+
+With 712 rows, I chose to test on 20% because the output tables are balanced. 
+I may have gone back and changed it to closer to a 70/30 split if they weren't. 
+
+```{r}
+#library(splitstackshape)
+#?stratified()
+```
+
+
+
+
+
+
+
+## Question 4      
+
+<br> 
+Create your decision tree to try and predict survival probability using an appropriate method, and create a decision tree plot.
+
+```{r}
+titanic_fit <- rpart(
+  formula = survived ~ ., # response
+  data = titanic_train, # specify data set
+  method = "class" 
+)
+titanic_fit
+```
+plot it 
+```{r}
+rpart.plot(titanic_fit, 
+           yesno = 2, 
+           fallen.leaves = TRUE, 
+           faclen = 6, 
+           digits = 4)
+
+rpart.plot(titanic_fit, 
+           yesno = 2, 
+           fallen.leaves = TRUE, 
+           faclen = 6, 
+           digits = 4, 
+           extra = 101) #takes probabilities away and gives us total count
+```
+another way of looking at this info:
+```{r}
+rpart.rules(titanic_fit)
+rpart.rules(titanic_fit, cover = TRUE)
+```
+
+
+## Question 5    
+
+<br> 
+Write down what this tells you, in detail. What variables are important? What does each node tell you? Who has the highest chance of surviving? Who has the lowest? Provide as much detail as you can.    
+
+Considerations include:
+* sex
+* whether a female is in the lower class or not
+* and whether females in the lower class had a sibling/spouse with them on board. 
+
+The top row of the decision tree explains that 40.88% of individuals in our 
+available dataset survived the sinking of The Titanic (59.12% did not survive).  
+
+If you were a male (63.68% of our original data = male), you were far less 
+likely to survive than if you were a female. 20.66% of males survived and 76.33% 
+of females survived. 
+
+Considering females only, if you were in the middle or upper class, you were 
+likely to survive - 96.75% of females in middle and upper class survived. Only 
+46.43% of women in the lower class survived. 
+
+And finally, when considering females in the lower class (14.74% of our original 
+dataset) we see that those who had no siblings or a spouse with them on board 
+were more likely to survive than those who had one or more siblings/spouse 
+(hopefully only one of those!). 57.45% of lower class females with no siblings/ 
+spouse survived, compared with 32.43% of lower class females with a spouse or 1 
+or more siblings. 
+
+Females in the middle or upper class have the highest chance of surviving. Men, 
+and women in the lower class with a spouse/one or more siblings are the least 
+likely to survive. 
+
+
+<br>
+
+
+
+
+
+
+
+
+## Question 6     
+
+<br>  
+Test and add your predictions to your data. Create a confusion matrix. Write down in detail what this tells you for this specific dataset.  
+
+Use trained model to create predictions on test dataset:
+```{r}
+library(modelr)
+
+#add predictions
+titanic_test_predictions <- titanic_test %>% 
+  add_predictions(titanic_fit, 
+                  type = "class") 
+titanic_test_predictions
+```
+
+Confusion matrix:
+
+```{r}
+library(yardstick)
+```
+```{r}
+conf_matrix <- titanic_test_predictions %>% 
+  conf_mat(truth = survived, # this is us telling it which way to show us the matrix
+           estimate = pred) 
+conf_matrix
+```
+^ these are the people in our test set. 
+
+We predicted that 99 of the people in our test set would not survive. Of these, 
+we were correct for 77 people, 22 actually survived so are false negative 
+results. 
+
+We predicted that 43 people in out test set would survive. The model was correct
+for 33 people however 10 did not survive. This means we have 10 false positive 
+results. 
+
+
+Show us how accurate our model was:
+```{r}
+titanic_test_predictions %>% 
+  accuracy(truth = survived, 
+           estimate = pred)
+```
+
+Overall, the model was 77% accurate ("it depends on the data and the question as 
+to whether this is good or not")
+
+
+
+Sensitivity (ability of a test to correctly identify true positive rate = 89%):
+```{r}
+titanic_test_predictions %>% 
+  sensitivity(truth = survived, 
+           estimate = pred)
+```
+
+specificity (ability of the test to correctly identify true negative rate = 60%): 
+```{r}
+titanic_test_predictions %>% 
+  specificity(truth = survived, 
+           estimate = pred)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Extension  
+
+See how a `ranger()` random forest classifier compares with a single decision tree in terms of performance. Can you tune the values of the `mtry`, `splitrule` and `min.node.size` hyperparameters? Which variables in the dataset turn out to be most important for your best model? The `Kappa` metric might be the best one to focus on if you want to improve performance for an imbalanced data set. Do some research on the definition of `Kappa` before you start.
+
+We provide the code in the dropdown below if you get stuck, but still want to play around with this (note that run time can be up to 5-10 mins for the tuning). **Save your notebook before you begin** in case you need to force quit your session!
+
+<br>
+<details>
+<summary>**Code**</summary>
+
+```{r, eval=FALSE}
+library(ranger)
+
+control <- trainControl(
+  method = "repeatedcv", 
+  number = 5, 
+  repeats = 10
+)
+
+tune_grid = expand.grid(
+  mtry = 1:6,
+  splitrule = c("gini", "extratrees"),
+  min.node.size = c(1, 3, 5)
+)
+```
+
+```{r, eval=FALSE}
+rf_tune <- train(
+  survived_flag ~ ., 
+  data = titanic_train, 
+  method = "ranger",
+  metric = "Kappa",
+  num.trees = 1000,
+  importance = "impurity",
+  tuneGrid = tune_grid, 
+  trControl = control
+)
+
+plot(rf_tune)
+rf_tune
+```
+</details>
+<br>
+
