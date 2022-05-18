@@ -1,0 +1,281 @@
+---
+title: "Clustering homework"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+* You have been provided some customer data from a shopping centre. Do some exploratory analysis on the data. Comment on findings. 
+
+* We are interested in creating a marketing campaign to target customers based on their spending score and annual income. Perform a k-means clustering to find if there are meaningful clusters in the data to target the customers. 
+
+* Perform k-means clustering and chose a value of k.
+
+* Visualise the clustering for your chosen value of k.
+
+* Do you think the clustering seems a good fit for this data?
+
+* Comment on the attributes on one or two of the clusters (maybe even give them a label if you like - like in section 4.1 of the 'Segmentation & clustering intro' lesson). 
+
+
+```{r}
+library(tidyverse)
+library(ggplot2)
+library(GGally)
+```
+
+```{r}
+mall_customers <- read_csv("data/mall_customers.csv")
+```
+annual income (k$)
+Spending Score(1-100)
+
+```{r}
+glimpse(mall_customers)
+
+mall_customers <- mall_customers %>% 
+  janitor::clean_names()
+
+summary(mall_customers)
+
+mall_customers %>% 
+  group_by(age) %>% 
+  summarise(count = n()) 
+#51 ages, 18 - 70 years.
+
+mall_customers %>% 
+  group_by(spending_score_1_100) %>% 
+  summarise(count = n()) 
+#84 spending scores, 1 - 99.
+
+mall_customers %>% 
+  group_by(gender) %>% 
+  summarise(n = n())
+# 112 female, 88 male. 
+```
+
+200 customers aged 18 - 70 years with a minimum annual income of $15k, and max
+of $137k (mean = 60.56k). Spending scores range from 1-100 but the max is only 
+99 (mean = 50.20). 112 are female and 88 are male. 
+
+
+```{r}
+mall_customers %>% 
+  ggplot()+
+  aes(x = age, 
+      fill = gender)+ 
+  geom_bar()
+```
+
+```{r}
+mall_customers %>% 
+  select(-customer_id) %>% 
+ggpairs()
+```
+There is a significant (but quite low) negative correlation between `spending score` 
+and `age` (-0.33).  
+
+There are _potential_ clusters in the `annual income` and `spending score` graph, 
+and in the `age` and `spending score` graph. 
+
+
+```{r}
+mall_customers %>% 
+  select(annual_income_k, spending_score_1_100) %>% 
+  ggplot(aes(x = annual_income_k, 
+             y = spending_score_1_100))+
+  geom_point()
+```
+
+
+...Should I scale?? Annual income is in the 1000s and spending score is less than
+100. So, probably. 
+
+```{r}
+mall_customers %>% 
+  as_tibble() %>% 
+  pivot_longer(cols = c(annual_income_k, spending_score_1_100),
+               names_to = "type", 
+               values_to = "value") %>% 
+  group_by(type) %>% 
+  summarise(mean = round(mean(value)),
+            sd = sd(value))
+
+```
+annual income mean = 61, sd = 26.26
+spending score mean = 50, sd = 25.82
+
+
+```{r}
+score_and_income <- mall_customers %>% 
+  select(spending_score_1_100, annual_income_k) 
+
+score_and_income_scale <- score_and_income %>% 
+  mutate_all(scale)
+
+
+score_and_income_scale %>% 
+  as_tibble() %>% 
+  pivot_longer(cols = c(annual_income_k, spending_score_1_100),
+               names_to = "type", 
+               values_to = "value") %>% 
+  group_by(type) %>% 
+  summarise(mean = round(mean(value)),
+            sd = sd(value))
+```   
+
+
+
+### How do we find out how many clusters will be best: 
+
+#### 1. Elbow method
+
+```{r}
+library(factoextra)
+
+fviz_nbclust(score_and_income_scale,
+             kmeans, 
+             method = "wss",
+             nstart = 25
+             )
+```
+
+From this graph, I might choose 3 clusters, or maybe 5 is sharper? I'll see 
+what the other methods suggest but from looking at the scatter plot, I reckon 
+5 makes sense. 
+
+
+#### 2. Silhouette coefficient
+
+```{r}
+fviz_nbclust(score_and_income_scale, 
+             kmeans, 
+             method = "silhouette", 
+             nstart = 25)
+```
+
+5 clusters is the optimum here, but 6 is pretty close. 
+
+
+#### 3. Gap Statistics 
+
+fviz_nbclust(students_big_scale, kmeans, method = "gap_stat") #would put nstart=25 if had more computing power
+
+```{r}
+fviz_nbclust(score_and_income_scale, 
+             kmeans, 
+             method = "gap_stat")
+```
+
+Oh, this is messy. It says 1. But is it really 3? 6?
+
+Maybe the data is not well suited to k-means clustering as we have quite 
+different outcomes from the three methods.
+
+
+
+#### clustering with k-means
+
+```{r}
+set.seed(9) # remember only do this when playing about - don't do in real life
+
+clustered_score_income <- kmeans(score_and_income_scale, 
+                        centers = 5, # "5 centroids (clusters), please"
+                        nstart = 25  # how many random sets would we like - runs 25 times for this model
+                        )
+clustered_score_income
+```
+
+5 clusters of sizes 39, 23, 35, 81, 22
+
+^ That's quite a difference e.g. 81 and 22 (does it matter?)
+
+^ For `within cluster sum of squares` (measure of error) the smaller the better
+as it means clusters are quite tightly packed. Here, the figures range from 5.23
+to 19.67, that's quite a difference (I think).
+
+
+Looking at each cluster in a clearer way:
+```{r}
+library(broom)
+
+tidy(clustered_score_income, 
+     col.names = colnames(score_and_income_scale))
+```
+
+
+augment - looking at the full data set again:
+```{r}
+s_i_clusters <- augment(clustered_score_income, mall_customers)
+s_i_clusters
+```
+
+"This is a handy way of running many models and saving all the results and/or 
+performance metrics into a single tibble for more streamlined manipulation and 
+comparison using ‘tidy’ principles."
+
+```{r}
+# Set min & max number of clusters want to look at 
+max_k <- 5
+
+k_clusters <- tibble(k = 1:max_k) %>%
+  mutate(
+    kclust = map(k, ~ kmeans(score_and_income_scale, 
+                             .x, 
+                             nstart = 25)), 
+    tidied = map(kclust, tidy),
+    glanced = map(kclust, glance),
+    augmented = map(kclust, augment, score_and_income)
+  )
+
+k_clusters
+```
+
+Visualising: 
+```{r}
+k_clusters %>% 
+  unnest(cols = c(augmented)) %>% 
+  ggplot(aes(x = annual_income_k, 
+             y = spending_score_1_100)) +
+  geom_point(aes(color = .cluster))
+```
+
+
+What are the average scores split by cluster?
+
+```{r}
+s_i_clusters %>% 
+  group_by(.cluster) %>% 
+  summarise(mean(annual_income_k), 
+            mean(spending_score_1_100),
+            mean(age))
+```
+
+Clusters:
+
+1. 39 customers - Second highest annual income and high(est) spending score with 
+an average age of ~33 years. 
+Marketing should be looked into with this group - are they shopping for 
+themselves/dependents?
+
+2. 23 customers - Low annual income and low spending score with an average age 
+of ~45 years. 
+
+3. 35 customers - High(est) annual income and low(est) spending score with an 
+average age of 41 years. Maybe they normally shop in high end shops that are not 
+in this particular mall?
+
+4. 81 customers - Medium annual income and medium spending score with an average
+age of 43 years. I would think that looking into marketing towards these shoppers 
+might be wise. They might not spend as much but there seem to be lots of them and
+they might be buying on behalf of children/dependents as well as themselves. 
+
+5. 22 customers - low(est) annual income but second highest spending score with 
+an average age of 25 years. I would also consider looking into marketing here
+especially due to their average age - are they students/ new to the workforce/
+more likely to buy lots of outfits due to socialising/ weddings etc. Do they have
+young children? etc. 
+
