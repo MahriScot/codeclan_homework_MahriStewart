@@ -219,7 +219,8 @@ comparison using ‘tidy’ principles."
 
 ```{r}
 # Set min & max number of clusters want to look at 
-max_k <- 5
+max_k <- 5  # i had this as 20 before but it didn't work, realise it could be 
+#20 and then when I unnest I can filter(k == 5) (i think :) )
 
 k_clusters <- tibble(k = 1:max_k) %>%
   mutate(
