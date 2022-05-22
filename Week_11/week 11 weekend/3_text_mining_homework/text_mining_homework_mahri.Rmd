@@ -1,0 +1,222 @@
+---
+title: "Text Mining Homework"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    number_sections: true
+    df_print: paged
+    css: ../../../styles.css
+  pdf_document: default
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, eval = FALSE, fig.align = "center", message = FALSE, warning = FALSE)
+```
+
+# MVP
+
+Using the dataset `austen_books()` from the package `janeaustenr`:
+
+1. Find the most common words in both Pride & Prejudice and Sense & Sensibility.
+2. Find the most common words in both Pride & Prejudice and Sense & Sensibility, 
+not including stop words.
+3. Find the most common sentiment words in both Pride & Prejudice and Sense & 
+Sensibility.
+
+# Extension
+
+Taking your results above. Can you create a plot which visualises the differences 
+between the books?  
+
+
+
+```{r}
+library(tidyverse)
+library(janeaustenr)
+library(tidytext)
+```
+
+
+## 1. Most common words
+
+### Pride & Prejudice
+
+Put all words in their own row and arrange by highest count:
+```{r}
+# head(prideprejudice, 20)
+pride_and_pred_book <- tibble(
+  id = 1:length(prideprejudice),
+  text = prideprejudice) %>% 
+  unnest_tokens(word, text) %>% 
+  count(word, sort = TRUE)
+pride_and_pred_book
+```
+
+### Sense and Sensibility 
+
+Put all words in their own row and arrange by highest count:
+```{r}
+# head(prideprejudice, 20)
+sense_and_sensi_book <- tibble(
+  id = 1:length(sensesensibility),
+  text = sensesensibility) %>% 
+  unnest_tokens(word, text) %>% 
+  count(word, sort = TRUE)
+sense_and_sensi_book
+```
+
+
+## 2. Find the most common words in both Pride & Prejudice and Sense & Sensibility, 
+not including stop words.
+
+### 1. Pride and Prejudice 
+
+Most common words without stop words:
+```{r}
+p_and_p_no_stop_words <- pride_and_pred_book %>% 
+  anti_join(stop_words) 
+p_and_p_no_stop_words
+```
+
+### 2. Sense and Sensibility 
+
+Most common words without stop words:
+```{r}
+s_and_S_no_stop_words <- sense_and_sensi_book %>% 
+  anti_join(stop_words) 
+s_and_S_no_stop_words
+```
+
+
+
+
+## 3. Find the most common sentiment words in both Pride & Prejudice and Sense & 
+Sensibility.
+
+### 1. Pride and Prejudice 
+```{r}
+p_and_p_sentiments <- p_and_p_no_stop_words %>% 
+  inner_join(get_sentiments("bing"), by = "word") %>% 
+  filter(word != "miss")
+
+p_and_p_sentiments %>% head(10)
+```
+
+Most common positive and negative:
+```{r}
+p_and_p_sentiments %>% 
+  filter(sentiment == "positive")
+
+p_and_p_sentiments %>% 
+  filter(sentiment == "negative") 
+```
+
+
+
+### 2. Sense and Sensibility 
+
+```{r}
+s_and_s_sentiments <- s_and_S_no_stop_words %>% 
+  inner_join(get_sentiments("bing"), by = "word") %>% 
+  filter(word != "miss")
+
+s_and_s_sentiments %>% head(10)
+```
+
+Most common positive and negative:
+```{r}
+p_and_p_sentiments %>% 
+  filter(sentiment == "positive")
+
+p_and_p_sentiments %>% 
+  filter(sentiment == "negative")
+```
+
+
+
+
+## # Extension
+
+Taking your results above. Can you create a plot which visualises the differences 
+between the books?
+
+
+### 1. Pride and Prejudice 
+
+Hoping that positive and negatives cancel each other out a bit so we can see the
+mean of the sentence
+```{r}
+book_pride_sentences <- tibble(
+  text = prideprejudice, 
+  sentence = 1:length(prideprejudice)
+) %>% 
+  unnest_tokens(word, text) %>% #word from text
+  anti_join(stop_words, by = "word")
+
+
+book_pride_sentiment_scores <- book_pride_sentences %>% 
+  filter(word != "miss") %>% 
+  inner_join(get_sentiments("afinn"), #or bing or the other one
+             by = "word")
+book_pride_sentiment_scores %>% 
+  head(10)
+
+
+pride_and_p_sentence_sentiments <- book_pride_sentiment_scores %>% 
+  group_by(sentence) %>% 
+  summarise(n_words = n(), 
+            mean_sentiment = mean(value))
+pride_and_p_sentence_sentiments %>% head(10)
+```
+
+```{r}
+ggplot(pride_and_p_sentence_sentiments, 
+       aes(x = sentence, 
+           y = mean_sentiment)) + 
+  geom_point(alpha = 0.1) +
+  geom_smooth(method = "loess") #localised regression
+```
+
+
+### 2. Sense and Sensibility 
+
+```{r}
+book_sense_sentences <- tibble(
+  text = sensesensibility, 
+  sentence = 1:length(sensesensibility)
+) %>% 
+  unnest_tokens(word, text) %>% #word from text
+  anti_join(stop_words, by = "word")
+
+
+book_sense_sentiment_scores <- book_sense_sentences %>% 
+  filter(word != "miss") %>% 
+  inner_join(get_sentiments("afinn"), #or bing or the other one
+             by = "word")
+book_sense_sentiment_scores %>% 
+  head(10)
+
+
+sense_and_s_sentence_sentiments <- book_sense_sentiment_scores %>% 
+  group_by(sentence) %>% 
+  summarise(n_words = n(), 
+            mean_sentiment = mean(value))
+sense_and_s_sentence_sentiments %>% head(10)
+```
+
+
+```{r}
+ggplot(sense_and_s_sentence_sentiments, 
+       aes(x = sentence, 
+           y = mean_sentiment)) + 
+  geom_point(alpha = 0.1) +
+  geom_smooth(method = "loess") #localised regression
+```
+
+
+
+
+
+

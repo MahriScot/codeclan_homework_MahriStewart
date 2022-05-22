@@ -1,0 +1,28 @@
+---
+title: "Text Mining Homework"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    number_sections: true
+    df_print: paged
+    css: ../../../styles.css
+  pdf_document: default
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, eval = FALSE, fig.align = "center", message = FALSE, warning = FALSE)
+```
+
+# MVP
+
+Using the dataset `austen_books()` from the package `janeaustenr`:
+
+1. Find the most common words in both Pride & Prejudice and Sense & Sensibility.
+2. Find the most common words in both Pride & Prejudice and Sense & Sensibility, not including stop words.
+3. Find the most common sentiment words in both Pride & Prejudice and Sense & Sensibility.
+
+# Extension
+
+Taking your results above. Can you create a plot which visualises the differences between the books?  
