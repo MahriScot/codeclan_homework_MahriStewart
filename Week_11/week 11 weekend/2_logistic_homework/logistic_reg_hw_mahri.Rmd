@@ -1,0 +1,121 @@
+---
+title: "Logistic regression homework"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    number_sections: true
+    df_print: paged
+    css: ../../../styles.css
+  pdf_document: default
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(fig.align = "center")
+```
+
+# MVP
+
+You have been provided with a set of data on customer purchases of either 'Citrus Hill' (`purchase = 'CH'`) or 'Minute Maid' (`purchase = 'MM'`) orange juice, together with some further attributes of both the customer and the store of purchase. A data dictionary is also provided in the `data` directory.
+
+We would like you to build the best **predictive classifier** you can of whether a customer is likely to buy Citrus Hill or Minute Maid juice. Use **logistic regression** to do this. You should use either train-test splitting or cross-validation to evaluate your classifier. The metric for 'best classifier' will be **highest AUC value** either in the test set (for train-test splitting) or from cross-validation.
+
+**Issues we faced, thoughts we had**
+
+* This is quite a tough, open-ended exercise. We decided early on to use an automated approach to model selection using `glmulti()`, but feel free to use a manual approach if you prefer!
+* The `Purchase` dependent variable will require wrangling to work in logistic regression. We replaced it with a `purchase_mm` logical variable.
+* Wrangle other categorical variables to be factors too.
+* `WeekOfPurchase` is also quite tough to deal with: should it be added as a factor variable (it will lead to many coefficients), left as numeric, or omitted entirely? See if you can come up with a strategy to decide what to do with it.
+* Check for aliased variables and remove any aliases before you set off to find your best models. Remember, you can use something like `alias(purchase_mm ~ ., data = oj)` to do this, the dot `.` here means 'all variables'. Aliased variables will be listed down the left-hand side, and you can subsequently remove them.
+
+**`glmulti()` hints**
+
+If you decide to use `glmulti()` be prepared for your `R` session to hang if you decide to abort a run! The reason for this is that `glmulti()` actually uses a separate Java runtime to do its thing in the background, and unfortunately `R` can't instruct Java to terminate on request. D'oh! Accordingly, make sure you **save any changes** to your work **before** each `glmulti()` run. That way, you can force quit `RStudio` if necessary without losing work. 
+
+Here are some example inputs for using `glmulti()` with logistic regression for a variety of purposes.
+_see homework folder_
+
+<hr>
+<hr>
+
+```{r}
+library(tidyverse)
+
+library(GGally)
+
+```
+
+```{r}
+orange_juice <- read_csv("data/orange_juice.csv")
+glimpse(orange_juice)
+```
+
+```{r}
+# store 7 has it's own column... 
+orange_juice %>% 
+  group_by(StoreID) %>%     # there are 5 stores. 
+  summarise(count = n()) # store 7 has 356, 2 has 222, 3 = 196, 1 = 157, 4 = 139
+```
+`store` = 0 if the `store_id` == 7, and is equal to it's store_id otherwise..
+
+It's messy:
+```{r}
+orange_juice <- orange_juice %>% 
+  janitor::clean_names() %>% 
+  mutate(purchase = as_factor(purchase),
+         #weekof_purchase = as_factor(weekof_purchase), #causes problems later
+        #store7 = as.logical(store7 == "Yes"), # I tried lots but nothing worked
+        store7 = as_factor(store7),
+        special_ch = as.logical(special_ch),
+        special_mm = as.logical(special_mm),
+        store = as.factor(store),
+        store_id = as.factor(store_id))
+
+summary(orange_juice)
+# 653 purchases of CH, 417 purchases of MM
+```
+
+```{r}
+#alias(not sure what I want to put in here ~ ., data = orange_juice)
+# 1. price difference columns (list_price_diff and (sale)price_diff) can probably 
+# be derived from the other price columns
+# 2. store and store id are the same really. and store7 can be worked out from either
+# (i didn't make store_id a factor so going back to do that)
+
+alias(purchase ~ ., data = orange_juice)
+
+```
+```{r}
+orange_juice <- orange_juice %>% 
+  select(-c("store7", "store", "price_diff", "list_price_diff"))
+```
+
+```{r}
+# orange_juice %>% 
+# ggpairs() # had previously changed weekof_purchase to a factor but it has too many levels... so i changed it back
+
+#^ this is too messy to see, so split it up, i guess by half
+
+orange_juice %>% 
+  select(c("purchase", "weekof_purchase", "store_id", "price_ch",
+           "price_mm", "disc_ch", "disc_mm")) %>% 
+  ggpairs()
+```
+^ `store_id`, `disc_ch`, `disc_mm`, and `price_mm` all seem interesting...  
+
+
+```{r}
+orange_juice %>% 
+  select(c("purchase", "special_ch", "special_mm", "loyal_ch", 
+           "sale_price_mm", "sale_price_ch", "pct_disc_mm",
+           "pct_disc_ch")) %>% 
+  ggpairs()
+```
+^ argument for all, but especially `loyal_ch` and the percentage discounts
+
+
+
+
+
+
